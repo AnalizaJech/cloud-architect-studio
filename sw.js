@@ -1,5 +1,5 @@
 /* Offline application shell. Increment the version when releasing new assets. */
-const CACHE = "cloud-architect-studio-v12";
+const CACHE = "cloud-architect-studio-v13";
 const SHELL = [
   "./",
   "./index.html",

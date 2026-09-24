@@ -35,6 +35,7 @@ let pointer = null,
   saveTimer = null,
   interacted = false;
 let viewportMode = "fit";
+let saveRevision = 0;
 const sceneHandlers = { select, nodeDown, nodeKey, contextMenu };
 let sceneFrame = 0;
 
@@ -90,7 +91,7 @@ function render() {
   syncGrid();
   renderScene(doc, selected, viewport, sceneHandlers);
   $("empty-state").hidden = doc.nodes.length > 0;
-  $("title").value = doc.title;
+  if (document.activeElement !== $("title")) $("title").value = doc.title;
   $("undo-btn").disabled = !history.canUndo;
   $("redo-btn").disabled = !history.canRedo;
   $("zoom-label").textContent = `${Math.round(viewport.scale * 100)}%`;
@@ -98,20 +99,35 @@ function render() {
     `${doc.nodes.length} componentes · ${doc.edges.length} conexiones`;
   renderInspector();
 }
-function commit() {
-  interacted = true;
-  history.push(doc);
-  $("save-status").textContent = "Guardando…";
+/** Keep the save indicator compact while exposing its state to assistive technology. */
+function setSaveStatus(state) {
+  const status = $("save-status");
+  const label = state === "saving" ? "Guardando…" : state === "error" ? "Sin guardar" : "Guardado";
+  status.dataset.state = state;
+  status.setAttribute("aria-label", label);
+  status.title = label;
+  status.querySelector(".save-status-label").textContent = label;
+  status.querySelector(".icon-slot").replaceChildren(createIcon(state === "error" ? "close" : "check", 15));
+}
+/** Persist the latest revision without letting an older write alter its indicator. */
+function persist() {
+  const revision = ++saveRevision;
+  setSaveStatus("saving");
   clearTimeout(saveTimer);
   saveTimer = setTimeout(async () => {
     try {
       await saveDocument(doc);
-      $("save-status").textContent = "Guardado";
+      if (revision === saveRevision) setSaveStatus("saved");
     } catch {
-      $("save-status").textContent = "Sin guardar";
+      if (revision === saveRevision) setSaveStatus("error");
       toast("No se pudo guardar el diagrama");
     }
   }, 450);
+}
+function commit() {
+  interacted = true;
+  history.push(doc);
+  persist();
   render();
 }
 function setDocument(value) {
@@ -185,13 +201,13 @@ function undo() {
   doc = history.undo();
   selected = null;
   render();
-  saveDocument(doc);
+  persist();
 }
 function redo() {
   doc = history.redo();
   selected = null;
   render();
-  saveDocument(doc);
+  persist();
 }
 function setTool(next) {
   tool = next;
@@ -793,6 +809,7 @@ async function init() {
   $("title").addEventListener("change", (event) => {
     doc.title =
       event.target.value.trim().slice(0, 80) || "Arquitectura sin título";
+    event.target.value = doc.title;
     commit();
   });
   $("new-btn").onclick = confirmNew;
