@@ -203,7 +203,7 @@ input:focus-visible,
 }
 .workspace {
   display: grid;
-  grid-template-columns: 260px minmax(0, 1fr) 244px;
+  grid-template-columns: 260px minmax(0, 1fr) 320px;
   min-height: 0;
   flex: 1;
 }
@@ -242,10 +242,10 @@ input:focus-visible,
   display: flex;
   align-items: center;
   margin: 0 14px 14px;
-  padding: 0 10px;
-  height: 38px;
+  padding: 0 12px;
+  min-height: 44px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: 10px;
   color: var(--muted);
   gap: 7px;
   background: #11171d;
@@ -256,21 +256,40 @@ input:focus-visible,
 .search input {
   min-width: 0;
   width: 100%;
+  height: 42px;
   border: 0;
   outline: 0;
   background: none;
   color: var(--text);
-  font-size: 12px;
+  font-size: 13px;
+  appearance: none;
+  -webkit-appearance: none;
+}
+.search input::-webkit-search-cancel-button,
+.search input::-webkit-search-decoration {
+  display: none;
 }
 .search kbd {
   border: 1px solid #3e4853;
   border-radius: 3px;
-  padding: 1px 5px;
-  font-size: 10px;
+  padding: 2px 6px;
+  font-size: 11px;
+  flex: none;
 }
 .palette {
   overflow: auto;
   padding: 0 10px 15px;
+  scrollbar-width: thin;
+  scrollbar-color: #52606b transparent;
+}
+.palette::-webkit-scrollbar { width: 8px; }
+.palette::-webkit-scrollbar-track { background: transparent; }
+.palette::-webkit-scrollbar-thumb {
+  border: 2px solid #171d24;
+  border-radius: 8px;
+  background: #52606b;
+}
+.palette::-webkit-scrollbar-thumb:hover { background: #71818e; }
 }
 .palette-group {
   margin-bottom: 8px;
@@ -674,11 +693,21 @@ input:focus-visible,
   display: block;
   margin-top: 7px;
   width: 100%;
-  padding: 9px 10px;
+  min-width: 0;
+  height: 44px;
+  padding: 0 12px;
   color: var(--text);
   background: #11171d;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 8px;
+  font-size: 13px;
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+.field input::-webkit-inner-spin-button,
+.field input::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 .field input:focus {
   border-color: var(--accent);
@@ -877,7 +906,7 @@ input:focus-visible,
     right: 0;
     top: 116px;
     bottom: 0;
-    width: 240px;
+    width: min(320px, 92vw);
     z-index: 7;
     box-shadow: var(--shadow);
     display: none;
