@@ -1,8 +1,14 @@
 import { catalogById } from "../modules/catalog.js";
+import {
+  edgePath,
+  labelLines,
+  nodeColor,
+  nodeHeight,
+  nodeWidth,
+} from "../modules/geometry.js";
+import { iconMarkup } from "../components/icons.js";
 import { escapeXml, download } from "../utils/escape.js";
 
-const W = 156,
-  H = 64;
 /** Bounds shared by raster and vector output. */
 function bounds(nodes) {
   if (!nodes.length) return { x: 0, y: 0, width: 800, height: 480 };
@@ -11,8 +17,14 @@ function bounds(nodes) {
   return {
     x: minX,
     y: minY,
-    width: Math.max(400, Math.max(...nodes.map((n) => n.x + W)) + 50 - minX),
-    height: Math.max(260, Math.max(...nodes.map((n) => n.y + H)) + 50 - minY),
+    width: Math.max(
+      400,
+      Math.max(...nodes.map((n) => n.x + nodeWidth(n))) + 50 - minX,
+    ),
+    height: Math.max(
+      260,
+      Math.max(...nodes.map((n) => n.y + nodeHeight(n))) + 50 - minY,
+    ),
   };
 }
 /** Produce a standalone SVG with no external resources. */
@@ -21,16 +33,30 @@ export function toSvg(doc) {
     byId = new Map(doc.nodes.map((n) => [n.id, n]));
   const edges = doc.edges
     .map((e) => {
-      const a = byId.get(e.from),
-        z = byId.get(e.to);
-      if (!a || !z) return "";
-      return `<path d="M ${a.x + W} ${a.y + H / 2} L ${z.x} ${z.y + H / 2}" fill="none" stroke="#91a1ad" stroke-width="2" marker-end="url(#arrow)"/>`;
+      const source = byId.get(e.from),
+        target = byId.get(e.to);
+      if (!source || !target) return "";
+      return `<path d="${edgePath(source, target)}" fill="none" stroke="#91a1ad" stroke-width="2" marker-end="url(#arrow)"/>`;
     })
     .join("");
   const nodes = doc.nodes
     .map((n) => {
       const meta = catalogById.get(n.type);
-      return `<g transform="translate(${n.x} ${n.y})"><rect width="${W}" height="${H}" rx="9" fill="#202a34" stroke="#52606b"/><rect x="10" y="12" width="39" height="39" rx="7" fill="${meta.color}" fill-opacity=".18"/><text x="29.5" y="37" text-anchor="middle" fill="${meta.color}" font-size="14" font-weight="700" font-family="sans-serif">${escapeXml(meta.glyph)}</text><text x="60" y="38" fill="#f2f4f0" font-size="12" font-weight="600" font-family="sans-serif">${escapeXml(n.label.slice(0, 15))}</text></g>`;
+      if (!meta) return "";
+      const width = nodeWidth(n),
+        height = nodeHeight(n);
+      const color = nodeColor(n, meta.color);
+      const lines = labelLines(n.label, width);
+      const firstY = height / 2 - (lines.length === 2 ? 11 : 4);
+      const label = lines
+        .map(
+          (line, index) =>
+            `<tspan x="78" y="${firstY + index * 17}">${escapeXml(line)}</tspan>`,
+        )
+        .join("");
+      const fill = n.variant === "outline" ? "#171e25" : "#202b34";
+      const dash = n.variant === "outline" ? ' stroke-dasharray="5 3"' : "";
+      return `<g transform="translate(${n.x} ${n.y})"><rect width="${width}" height="${height}" rx="${n.variant === "outline" ? 7 : 12}" fill="${fill}" stroke="#53616e" stroke-width="1.5"${dash}/><rect x="14" y="${(height - 48) / 2}" width="48" height="48" rx="9" fill="${color}" fill-opacity=".16"/>${iconMarkup(meta.icon, 24.5, (height - 27) / 2, 27, color)}<text x="78" fill="#f2f4f0" font-size="14" font-weight="600" font-family="sans-serif">${label}</text><text x="78" y="${height / 2 + 25}" fill="#91a0ac" font-size="10" font-family="sans-serif">${escapeXml(meta.group)}</text></g>`;
     })
     .join("");
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${Math.ceil(b.width)}" height="${Math.ceil(b.height)}" viewBox="${b.x} ${b.y} ${b.width} ${b.height}"><defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#91a1ad"/></marker></defs><rect x="${b.x}" y="${b.y}" width="${b.width}" height="${b.height}" fill="#11161d"/>${edges}${nodes}</svg>`;
@@ -69,7 +95,7 @@ export function toPlantUml(doc) {
 /** Export importable uncompressed mxGraphModel XML. */
 export function toDrawio(doc) {
   const byId = new Map(doc.nodes.map((n) => [n.id, n]));
-  return `<?xml version="1.0" encoding="UTF-8"?><mxfile host="Cloud Architect Studio"><diagram name="${escapeXml(doc.title)}"><mxGraphModel><root><mxCell id="0"/><mxCell id="1" parent="0"/>${doc.nodes.map((n) => `<mxCell id="${escapeXml(n.id)}" value="${escapeXml(n.label)}" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#202a34;fontColor=#ffffff;strokeColor=#52606b;" vertex="1" parent="1"><mxGeometry x="${n.x}" y="${n.y}" width="${W}" height="${H}" as="geometry"/></mxCell>`).join("")}${doc.edges
+  return `<?xml version="1.0" encoding="UTF-8"?><mxfile host="Cloud Architect Studio"><diagram name="${escapeXml(doc.title)}"><mxGraphModel><root><mxCell id="0"/><mxCell id="1" parent="0"/>${doc.nodes.map((n) => `<mxCell id="${escapeXml(n.id)}" value="${escapeXml(n.label)}" style="rounded=${n.variant === "outline" ? 0 : 1};whiteSpace=wrap;html=0;fillColor=#202a34;fontColor=#ffffff;strokeColor=${nodeColor(n, catalogById.get(n.type)?.color ?? "#52606b")};" vertex="1" parent="1"><mxGeometry x="${n.x}" y="${n.y}" width="${nodeWidth(n)}" height="${nodeHeight(n)}" as="geometry"/></mxCell>`).join("")}${doc.edges
     .filter((e) => byId.has(e.from) && byId.has(e.to))
     .map(
       (e) =>

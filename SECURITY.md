@@ -2,7 +2,7 @@
 
 ## Supported versions
 
-The current `main` release receives security fixes.
+The current `master` release receives security fixes.
 
 ## Reporting
 

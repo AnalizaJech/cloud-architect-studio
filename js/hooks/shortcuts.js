@@ -21,6 +21,11 @@ export function registerShortcuts(actions) {
       actions.newDocument();
       return;
     }
+    if (mod && key === "d") {
+      event.preventDefault();
+      actions.duplicateSelected();
+      return;
+    }
     if (mod && key === "s") {
       event.preventDefault();
       actions.exportJson();

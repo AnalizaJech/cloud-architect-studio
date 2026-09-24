@@ -16,7 +16,7 @@ Editor visual, privado y sin conexión. HTML, CSS y JavaScript nativos; listo pa
 
 ## Demo online
 
-URL prevista según el remoto Git actual: [Cloud Architect Studio](https://analizajech.github.io/cloud-architect-studio/). La publicación todavía debe habilitarse en GitHub Pages.
+Sitio publicado: [Cloud Architect Studio](https://analizajech.github.io/cloud-architect-studio/). Los cambios de este repositorio requieren una nueva publicación para aparecer allí.
 
 ## Capturas y GIFs
 
@@ -26,6 +26,10 @@ Capturas reales de la aplicación en un servidor local:
 | ----------------------------------------- | ----------------------------------- |
 | ![Editor en escritorio](docs/desktop.png) | ![Editor en móvil](docs/mobile.png) |
 
+![Inspector con tamaño, color y estilo personalizados](docs/customization.png)
+
+![Ejemplo abierto a escala legible en 360 px](docs/mobile-example.png)
+
 ![Del lienzo vacío a un diagrama de ejemplo](docs/demo.gif)
 
 El GIF alterna dos capturas reales del editor: el lienzo vacío y el ejemplo cargado.
@@ -33,8 +37,10 @@ El GIF alterna dos capturas reales del editor: el lienzo vacío y el ejemplo car
 ## Características
 
 - Biblioteca de 33 componentes de AWS, Azure, GCP, GitHub, GitLab, Kubernetes, Docker, Terraform, ArgoCD, Jenkins, Port, Backstage, n8n, Kafka, Redis, PostgreSQL, MongoDB, RabbitMQ, Grafana, Prometheus, Loki, Tempo y OpenTelemetry.
+- Iconos SVG originales en la biblioteca, los controles, los nodos y las exportaciones visuales; sin emoji ni imágenes remotas.
 - Arrastrar y soltar con mouse; tocar para colocar con teclado o pantalla táctil.
 - Conexiones entre componentes, inspector, auto layout, cuadrícula, snap, zoom de 2 % a 3200 %, pan, undo y redo.
+- Personalización por nodo: nombre, posición, ancho, alto, color y estilo de tarjeta o contorno. Los diagramas JSON antiguos siguen siendo compatibles.
 - Exportación SVG, PNG, Draw.io, Mermaid, PlantUML y JSON. PDF mediante el diálogo de impresión del navegador.
 - Guardado local automático con IndexedDB y respaldo en localStorage.
 - PWA instalable y funcional sin conexión después de la primera visita.
@@ -54,11 +60,17 @@ python -m http.server 8000
 
 Visita `http://localhost:8000/`. Los módulos JavaScript y el Service Worker requieren HTTP local o HTTPS; abrir `index.html` directamente como archivo puede impedir su carga.
 
+Pruebas de dominio y exportación (Node solo se usa para desarrollo, no para ejecutar la app):
+
+```bash
+node --test tests/domain.test.mjs
+```
+
 ## Uso
 
 1. Arrastra un componente desde la biblioteca al lienzo, o selecciónalo para colocarlo en el centro.
 2. Activa **Conectar** y selecciona origen y destino.
-3. Mueve componentes, edita nombres en el inspector y usa **Auto layout** cuando sea útil.
+3. Mueve componentes, ajusta tamaño y apariencia en el inspector y usa **Auto layout** cuando sea útil.
 4. Exporta el diagrama. Usa JSON para conservar una copia editable e importarla después.
 
 ### Atajos
@@ -104,7 +116,7 @@ assets/       Identidad visual y medios
 css/          Tokens, diseño adaptable y estados
 js/app.js     Composición de la aplicación
 js/components/  Componentes DOM y SVG
-js/modules/     Dominio y catálogo
+js/modules/     Dominio, geometría y catálogo
 js/services/    Historial, persistencia y exportación
 js/utils/       Escapado y descargas
 js/hooks/       Atajos e interacciones
@@ -113,12 +125,13 @@ icons/        Logo y pictogramas PWA
 fonts/        Política de tipografía
 docs/         Arquitectura y material de proyecto
 examples/     Diagramas de ejemplo
+tests/        Pruebas de compatibilidad, geometría y exportación
 ```
 
 ## Deploy en GitHub Pages
 
 1. Publica los archivos en la raíz de un repositorio GitHub.
-2. En **Settings → Pages**, selecciona **Deploy from a branch**, rama `main`, carpeta `/ (root)`.
+2. En **Settings → Pages**, selecciona **Deploy from a branch**, rama `master`, carpeta `/ (root)`.
 3. Espera la URL `https://analizajech.github.io/cloud-architect-studio/`.
 4. Si cambias el propietario o repositorio, actualiza `sitemap.xml`, `robots.txt`, los metadatos de `index.html` y la sección **Demo online**.
 5. Comprueba instalación PWA, carga sin conexión e importación/exportación desde la URL publicada.

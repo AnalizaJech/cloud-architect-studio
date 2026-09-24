@@ -1,6 +1,13 @@
 import { catalogById } from "./catalog.js";
+import {
+  DEFAULT_HEIGHT,
+  DEFAULT_WIDTH,
+  nodeHeight,
+  nodeWidth,
+  nodeColor,
+} from "./geometry.js";
 
-/** @typedef {{id:string,type:string,label:string,x:number,y:number}} DiagramNode */
+/** @typedef {{id:string,type:string,label:string,x:number,y:number,width:number,height:number,color:string,variant:"card"|"outline"}} DiagramNode */
 /** @typedef {{id:string,from:string,to:string}} DiagramEdge */
 /** @typedef {{version:1,title:string,nodes:DiagramNode[],edges:DiagramEdge[]}} DiagramDocument */
 
@@ -35,15 +42,15 @@ export function normalizeDocument(input) {
   const ids = new Set();
   const nodes = input.nodes
     .slice(0, 2000)
-    .filter(
-      (node) =>
-        node &&
-        catalogById.has(node.type) &&
-        typeof node.id === "string" &&
-        !ids.has(node.id),
-    )
+    .filter((node) => {
+      if (!node || !catalogById.has(node.type) || typeof node.id !== "string")
+        return false;
+      const id = node.id.slice(0, 80);
+      if (!id || ids.has(id)) return false;
+      ids.add(id);
+      return true;
+    })
     .map((node) => {
-      ids.add(node.id);
       return {
         id: node.id.slice(0, 80),
         type: node.type,
@@ -53,19 +60,30 @@ export function normalizeDocument(input) {
         ),
         x: coordinate(node.x),
         y: coordinate(node.y),
+        width: nodeWidth(node),
+        height: nodeHeight(node),
+        color: nodeColor(node, catalogById.get(node.type).color),
+        variant: node.variant === "outline" ? "outline" : "card",
       };
     });
   const valid = new Set(nodes.map((node) => node.id));
+  const edgeIds = new Set();
   const edges = input.edges
     .slice(0, 4000)
-    .filter(
-      (edge) =>
-        edge &&
-        typeof edge.id === "string" &&
-        valid.has(edge.from) &&
-        valid.has(edge.to) &&
-        edge.from !== edge.to,
-    )
+    .filter((edge) => {
+      if (
+        !edge ||
+        typeof edge.id !== "string" ||
+        !valid.has(edge.from) ||
+        !valid.has(edge.to) ||
+        edge.from === edge.to
+      )
+        return false;
+      const id = edge.id.slice(0, 80);
+      if (!id || edgeIds.has(id) || valid.has(id)) return false;
+      edgeIds.add(id);
+      return true;
+    })
     .map((edge) => ({
       id: edge.id.slice(0, 80),
       from: edge.from,
@@ -101,13 +119,16 @@ export function autoLayout(document) {
   }
   const sorted = [...levels.keys()].sort((a, b) => a - b);
   const positions = new Map();
-  sorted.forEach((level, column) =>
-    levels
-      .get(level)
-      .forEach((node, row) =>
-        positions.set(node.id, { x: 80 + column * 230, y: 80 + row * 120 }),
-      ),
-  );
+  let x = 80;
+  for (const level of sorted) {
+    const column = levels.get(level);
+    let y = 80;
+    for (const node of column) {
+      positions.set(node.id, { x, y });
+      y += nodeHeight(node) + 64;
+    }
+    x += Math.max(...column.map(nodeWidth)) + 84;
+  }
   return {
     ...document,
     nodes: document.nodes.map((node) => ({
@@ -120,13 +141,23 @@ export function autoLayout(document) {
 /** An editable sample diagram for first use. */
 export function sampleDocument() {
   const nodes = [
-    ["github", "GitHub", 80, 180],
-    ["argocd", "ArgoCD", 320, 180],
-    ["kubernetes", "Kubernetes", 560, 180],
-    ["prometheus", "Prometheus", 800, 100],
-    ["grafana", "Grafana", 1040, 100],
-    ["postgresql", "PostgreSQL", 800, 300],
-  ].map(([type, label, x, y], i) => ({ id: `sample-${i}`, type, label, x, y }));
+    ["github", "GitHub", 80, 100],
+    ["argocd", "ArgoCD", 390, 100],
+    ["kubernetes", "Kubernetes", 700, 100],
+    ["prometheus", "Prometheus", 390, 325],
+    ["grafana", "Grafana", 80, 325],
+    ["postgresql", "PostgreSQL", 700, 325],
+  ].map(([type, label, x, y], i) => ({
+    id: `sample-${i}`,
+    type,
+    label,
+    x,
+    y,
+    width: DEFAULT_WIDTH,
+    height: DEFAULT_HEIGHT,
+    color: catalogById.get(type).color,
+    variant: "card",
+  }));
   const edges = [
     [0, 1],
     [1, 2],

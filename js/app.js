@@ -12,6 +12,14 @@ import { exportDocument } from "./services/export.js";
 import { renderPalette } from "./components/palette.js";
 import { renderScene } from "./components/scene.js";
 import { registerShortcuts } from "./hooks/shortcuts.js";
+import {
+  DEFAULT_HEIGHT,
+  DEFAULT_WIDTH,
+  nodeHeight,
+  nodeWidth,
+  nodeColor,
+} from "./modules/geometry.js";
+import { createIcon, hydrateIcons } from "./components/icons.js";
 
 const $ = (id) => document.getElementById(id);
 let doc = createDocument(),
@@ -26,6 +34,7 @@ const canvas = $("canvas");
 let pointer = null,
   saveTimer = null,
   interacted = false;
+let viewportMode = "fit";
 const sceneHandlers = { select, nodeDown, nodeKey, contextMenu };
 let sceneFrame = 0;
 
@@ -52,6 +61,19 @@ function toast(message) {
   item.textContent = message;
   $("toast-region").append(item);
   setTimeout(() => item.remove(), 3200);
+}
+
+/** Offer a reload when a newer offline shell takes control during editing. */
+function updateToast() {
+  const item = document.createElement("div");
+  item.className = "toast update-toast";
+  const label = document.createElement("span");
+  label.textContent = "Nueva versión disponible";
+  const button = document.createElement("button");
+  button.textContent = "Actualizar";
+  button.onclick = () => location.reload();
+  item.append(label, button);
+  $("toast-region").append(item);
 }
 /** Convert a pointer position to logical document coordinates. */
 function world(clientX, clientY) {
@@ -98,8 +120,8 @@ function setDocument(value) {
   connectFrom = null;
   history = new History(doc);
   commit();
-  fit();
-  render();
+  if (canvas.clientWidth < 700 && doc.nodes.length) focusFirst();
+  else fit();
 }
 function select(id) {
   selected = id;
@@ -120,8 +142,12 @@ function addNode(type, point) {
     id: createId(),
     type,
     label: meta.label,
-    x: snapped(center.x - 78),
-    y: snapped(center.y - 32),
+    x: snapped(center.x - DEFAULT_WIDTH / 2),
+    y: snapped(center.y - DEFAULT_HEIGHT / 2),
+    width: DEFAULT_WIDTH,
+    height: DEFAULT_HEIGHT,
+    color: meta.color,
+    variant: "card",
   };
   doc.nodes.push(node);
   selected = node.id;
@@ -139,6 +165,21 @@ function deleteSelected() {
   } else doc.edges = doc.edges.filter((e) => e.id !== selected);
   selected = null;
   commit();
+}
+/** Clone a selected component with a small visible offset. */
+function duplicateSelected(id = selected) {
+  const source = doc.nodes.find((node) => node.id === id);
+  if (!source) return;
+  const copy = {
+    ...source,
+    id: createId(),
+    x: source.x + 32,
+    y: source.y + 32,
+  };
+  doc.nodes.push(copy);
+  selected = copy.id;
+  commit();
+  toast("Componente duplicado");
 }
 function undo() {
   doc = history.undo();
@@ -194,7 +235,18 @@ function nodeDown(event, id) {
     connectNode(id);
     return;
   }
-  if (tool === "hand") return;
+  if (tool === "hand") {
+    pointer = {
+      kind: "pan",
+      x: event.clientX,
+      y: event.clientY,
+      originX: viewport.x,
+      originY: viewport.y,
+    };
+    canvas.setPointerCapture(event.pointerId);
+    canvas.classList.add("dragging");
+    return;
+  }
   selected = id;
   const node = doc.nodes.find((n) => n.id === id),
     start = world(event.clientX, event.clientY);
@@ -241,36 +293,23 @@ function contextMenu(event, id) {
   render();
   const menu = $("context-menu");
   menu.replaceChildren();
-  for (const [label, action] of [
-    [
-      "Duplicar",
-      () => {
-        const node = doc.nodes.find((n) => n.id === id);
-        const copy = {
-          ...node,
-          id: createId(),
-          x: node.x + 24,
-          y: node.y + 24,
-        };
-        doc.nodes.push(copy);
-        selected = copy.id;
-        commit();
-      },
-    ],
+  for (const [label, iconName, action] of [
+    ["Duplicar", "copy", () => duplicateSelected(id)],
     [
       "Conectar desde aquí",
+      "connect",
       () => {
         setTool("connect");
         connectFrom = id;
         select(id);
       },
     ],
-    ["Eliminar", deleteSelected],
+    ["Eliminar", "trash", deleteSelected],
   ]) {
     const button = document.createElement("button");
     button.type = "button";
     button.role = "menuitem";
-    button.textContent = label;
+    button.append(createIcon(iconName, 16), document.createTextNode(label));
     button.onclick = () => {
       menu.hidden = true;
       action();
@@ -283,7 +322,9 @@ function contextMenu(event, id) {
   menu.querySelector("button")?.focus();
 }
 canvas.addEventListener("pointerdown", (event) => {
-  if (event.target.closest?.(".node,.edge")) return;
+  // Interactive overlays keep their own pointer sequence and click target.
+  if (event.target.closest?.(".node,.edge,.empty-state,.canvas-bottom,button"))
+    return;
   if (event.button !== 0 && event.button !== 1) return;
   const pan = tool === "hand" || event.button === 1 || event.shiftKey;
   pointer = pan
@@ -302,6 +343,7 @@ canvas.addEventListener("pointerdown", (event) => {
 canvas.addEventListener("pointermove", (event) => {
   if (!pointer) return;
   if (pointer.kind === "pan") {
+    viewportMode = "manual";
     viewport.x = pointer.originX + event.clientX - pointer.x;
     viewport.y = pointer.originY + event.clientY - pointer.y;
     scheduleSceneRender();
@@ -335,6 +377,7 @@ canvas.addEventListener(
   "wheel",
   (event) => {
     event.preventDefault();
+    viewportMode = "manual";
     const rect = canvas.getBoundingClientRect(),
       x = event.clientX - rect.left,
       y = event.clientY - rect.top,
@@ -351,6 +394,7 @@ canvas.addEventListener(
 );
 
 function zoom(factor) {
+  viewportMode = "manual";
   const old = viewport.scale,
     x = canvas.clientWidth / 2,
     y = canvas.clientHeight / 2;
@@ -360,6 +404,7 @@ function zoom(factor) {
   render();
 }
 function fit() {
+  viewportMode = "fit";
   if (!doc.nodes.length) {
     viewport.x = 80;
     viewport.y = 80;
@@ -369,8 +414,8 @@ function fit() {
   }
   const minX = Math.min(...doc.nodes.map((n) => n.x)),
     minY = Math.min(...doc.nodes.map((n) => n.y)),
-    maxX = Math.max(...doc.nodes.map((n) => n.x + 156)),
-    maxY = Math.max(...doc.nodes.map((n) => n.y + 64));
+    maxX = Math.max(...doc.nodes.map((n) => n.x + nodeWidth(n))),
+    maxY = Math.max(...doc.nodes.map((n) => n.y + nodeHeight(n)));
   viewport.scale = Math.max(
     0.1,
     Math.min(
@@ -390,6 +435,19 @@ function fit() {
   render();
 }
 
+/** Open a diagram at a readable scale on narrow screens. Fit remains available. */
+function focusFirst() {
+  viewportMode = "focus";
+  const node = doc.nodes[0];
+  if (!node) return fit();
+  viewport.scale = Math.min(1, canvas.clientWidth / (nodeWidth(node) + 80));
+  viewport.x = 24 - node.x * viewport.scale;
+  viewport.y =
+    (canvas.clientHeight - nodeHeight(node) * viewport.scale) / 2 -
+    node.y * viewport.scale;
+  render();
+}
+
 /** Build property controls with safe DOM text assignment. */
 function renderInspector() {
   const root = $("inspector-content");
@@ -398,7 +456,7 @@ function renderInspector() {
     const empty = document.createElement("div");
     empty.className = "inspector-empty";
     const icon = document.createElement("span");
-    icon.textContent = "◈";
+    icon.append(createIcon("cursor", 36));
     const heading = document.createElement("h2");
     heading.textContent = "Sin selección";
     const description = document.createElement("p");
@@ -414,19 +472,40 @@ function renderInspector() {
     section.className = "inspector-section";
     const heading = document.createElement("h3");
     heading.textContent = "Conexión";
+    const edge = doc.edges.find((item) => item.id === selected);
+    if (edge) {
+      const source = doc.nodes.find((item) => item.id === edge.from);
+      const target = doc.nodes.find((item) => item.id === edge.to);
+      const detail = document.createElement("p");
+      detail.className = "inspector-description";
+      detail.textContent = `${source?.label ?? "Origen"} → ${target?.label ?? "Destino"}`;
+      section.append(heading, detail);
+    } else section.append(heading);
     const remove = document.createElement("button");
     remove.className = "danger";
-    remove.textContent = "Eliminar conexión";
+    remove.append(createIcon("trash", 16));
+    remove.append(document.createTextNode("Eliminar conexión"));
     remove.onclick = deleteSelected;
-    section.append(heading, remove);
+    section.append(remove);
     root.append(section);
     return;
   }
-  const section = document.createElement("div");
-  section.className = "inspector-section";
-  const heading = document.createElement("h3");
-  heading.textContent = "Componente";
-  section.append(heading);
+  const meta = catalogById.get(node.type);
+  const summary = document.createElement("div");
+  summary.className = "inspector-summary";
+  summary.style.setProperty("--node-color", nodeColor(node, meta.color));
+  const icon = document.createElement("span");
+  icon.className = "inspector-summary-icon";
+  icon.append(createIcon(meta.icon, 24));
+  const summaryText = document.createElement("span");
+  const summaryName = document.createElement("strong");
+  summaryName.textContent = node.label;
+  const summaryGroup = document.createElement("small");
+  summaryGroup.textContent = meta.group;
+  summaryText.append(summaryName, summaryGroup);
+  summary.append(icon, summaryText);
+  root.append(summary);
+
   const makeField = (label, value, onChange, type = "text") => {
     const wrapper = document.createElement("label");
     wrapper.className = "field";
@@ -438,16 +517,28 @@ function renderInspector() {
     wrapper.append(input);
     return wrapper;
   };
-  section.append(
+
+  const identity = document.createElement("section");
+  identity.className = "inspector-section";
+  const identityHeading = document.createElement("h3");
+  identityHeading.textContent = "Identidad";
+  identity.append(identityHeading);
+  identity.append(
     makeField("Nombre", node.label, (value) => {
-      node.label =
-        value.trim().slice(0, 80) || catalogById.get(node.type).label;
+      node.label = value.trim().slice(0, 80) || meta.label;
       commit();
     }),
   );
-  const row = document.createElement("div");
-  row.className = "field-row";
-  row.append(
+  root.append(identity);
+
+  const geometry = document.createElement("section");
+  geometry.className = "inspector-section";
+  const geometryHeading = document.createElement("h3");
+  geometryHeading.textContent = "Tamaño y posición";
+  geometry.append(geometryHeading);
+  const position = document.createElement("div");
+  position.className = "field-row";
+  position.append(
     makeField(
       "X",
       Math.round(node.x),
@@ -467,14 +558,122 @@ function renderInspector() {
       "number",
     ),
   );
-  section.append(row);
-  const type = document.createElement("p");
-  type.className = "field";
-  type.textContent = `Tipo: ${catalogById.get(node.type).label}`;
-  section.append(type);
+  geometry.append(position);
+  const size = document.createElement("div");
+  size.className = "field-row";
+  size.append(
+    makeField(
+      "Ancho",
+      nodeWidth(node),
+      (value) => {
+        node.width = Math.max(
+          160,
+          Math.min(420, Number(value) || DEFAULT_WIDTH),
+        );
+        commit();
+      },
+      "number",
+    ),
+    makeField(
+      "Alto",
+      nodeHeight(node),
+      (value) => {
+        node.height = Math.max(
+          72,
+          Math.min(220, Number(value) || DEFAULT_HEIGHT),
+        );
+        commit();
+      },
+      "number",
+    ),
+  );
+  geometry.append(size);
+  const resetSize = document.createElement("button");
+  resetSize.className = "inspector-link";
+  resetSize.textContent = "Restablecer tamaño";
+  resetSize.onclick = () => {
+    node.width = DEFAULT_WIDTH;
+    node.height = DEFAULT_HEIGHT;
+    commit();
+  };
+  geometry.append(resetSize);
+  root.append(geometry);
+
+  const appearance = document.createElement("section");
+  appearance.className = "inspector-section";
+  const appearanceHeading = document.createElement("h3");
+  appearanceHeading.textContent = "Apariencia";
+  appearance.append(appearanceHeading);
+  const colorLabel = document.createElement("p");
+  colorLabel.className = "field";
+  colorLabel.textContent = "Color de acento";
+  appearance.append(colorLabel);
+  const swatches = document.createElement("div");
+  swatches.className = "color-swatches";
+  for (const [label, color] of [
+    ["Proveedor", meta.color],
+    ["Lima", "#d8fb75"],
+    ["Azul", "#64b5f6"],
+    ["Coral", "#ff8f72"],
+    ["Violeta", "#b39afa"],
+    ["Turquesa", "#67d9ca"],
+  ]) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "color-swatch";
+    button.style.setProperty("--swatch", color);
+    button.setAttribute("aria-label", `Color ${label}`);
+    button.title = label;
+    button.setAttribute(
+      "aria-pressed",
+      String(nodeColor(node, meta.color) === color),
+    );
+    if (nodeColor(node, meta.color) === color)
+      button.append(createIcon("check", 13));
+    button.onclick = () => {
+      node.color = color;
+      commit();
+    };
+    swatches.append(button);
+  }
+  appearance.append(swatches);
+  const variantLabel = document.createElement("p");
+  variantLabel.className = "field";
+  variantLabel.textContent = "Estilo";
+  appearance.append(variantLabel);
+  const variants = document.createElement("div");
+  variants.className = "variant-options";
+  for (const [value, label] of [
+    ["card", "Tarjeta"],
+    ["outline", "Contorno"],
+  ]) {
+    const button = document.createElement("button");
+    button.textContent = label;
+    button.setAttribute(
+      "aria-pressed",
+      String((node.variant || "card") === value),
+    );
+    button.onclick = () => {
+      node.variant = value;
+      commit();
+    };
+    variants.append(button);
+  }
+  appearance.append(variants);
+  root.append(appearance);
+
+  const section = document.createElement("section");
+  section.className = "inspector-section";
+  const duplicate = document.createElement("button");
+  duplicate.className = "inspector-action";
+  duplicate.append(createIcon("copy", 16));
+  duplicate.append(document.createTextNode("Duplicar componente"));
+  duplicate.onclick = () => duplicateSelected(node.id);
+  section.append(duplicate);
   const remove = document.createElement("button");
   remove.className = "danger";
-  remove.textContent = "Eliminar componente";
+  remove.append(createIcon("trash", 16));
+  remove.append(document.createTextNode("Eliminar componente"));
   remove.onclick = deleteSelected;
   section.append(remove);
   root.append(section);
@@ -495,17 +694,17 @@ function exportDialog() {
   title.textContent = "Exportar diagrama";
   intro.textContent = "Elige un formato. Todo se genera en tu navegador.";
   options.className = "export-options";
-  for (const [format, label] of [
-    ["png", "PNG · imagen"],
-    ["svg", "SVG · vector"],
-    ["pdf", "PDF · imprimir"],
-    ["drawio", "Draw.io · XML"],
-    ["mermaid", "Mermaid · código"],
-    ["plantuml", "PlantUML · código"],
-    ["json", "JSON · proyecto"],
+  for (const [format, label, iconName] of [
+    ["png", "PNG · imagen", "download"],
+    ["svg", "SVG · vector", "layout"],
+    ["pdf", "PDF · imprimir", "documentDb"],
+    ["drawio", "Draw.io · XML", "workflow"],
+    ["mermaid", "Mermaid · código", "connect"],
+    ["plantuml", "PlantUML · código", "blocks"],
+    ["json", "JSON · proyecto", "documentDb"],
   ]) {
     const button = document.createElement("button");
-    button.textContent = label;
+    button.append(createIcon(iconName, 18), document.createTextNode(label));
     button.onclick = async () => {
       try {
         await exportDocument(doc, format);
@@ -564,6 +763,7 @@ function helpDialog() {
     ["Deshacer", "Ctrl + Z"],
     ["Rehacer", "Ctrl + Shift + Z"],
     ["Guardar JSON", "Ctrl + S"],
+    ["Duplicar", "Ctrl + D"],
     ["Eliminar", "Supr"],
     ["Zoom", "+ / −"],
   ]) {
@@ -585,6 +785,7 @@ document.addEventListener("keydown", (event) => {
 
 /** Wire controls and restore local data. */
 async function init() {
+  hydrateIcons();
   renderPalette($("palette"), "", addNode);
   $("search").addEventListener("input", (event) =>
     renderPalette($("palette"), event.target.value, addNode),
@@ -638,10 +839,7 @@ async function init() {
     $(`${name}-tool`).onclick = () => setTool(name);
   $("zoom-in").onclick = () => zoom(1.2);
   $("zoom-out").onclick = () => zoom(1 / 1.2);
-  $("zoom-label").onclick = () => {
-    viewport.scale = 1;
-    render();
-  };
+  $("zoom-label").onclick = () => zoom(1 / viewport.scale);
   $("fit-btn").onclick = fit;
   $("sidebar-toggle").onclick = () => $("sidebar").classList.add("open");
   $("sidebar-close").onclick = () => $("sidebar").classList.remove("open");
@@ -655,6 +853,7 @@ async function init() {
     newDocument: confirmNew,
     exportJson: () => exportDocument(doc, "json"),
     deleteSelected,
+    duplicateSelected,
     escape: () => {
       selected = null;
       connectFrom = null;
@@ -676,10 +875,28 @@ async function init() {
     toast("No se pudo recuperar el último diagrama");
   }
   render();
-  if (doc.nodes.length) requestAnimationFrame(fit);
-  if ("serviceWorker" in navigator)
-    window.addEventListener("load", () =>
-      navigator.serviceWorker.register("./sw.js").catch(() => {}),
+  if (doc.nodes.length)
+    requestAnimationFrame(() =>
+      canvas.clientWidth < 700 ? focusFirst() : fit(),
     );
+  new ResizeObserver(() => {
+    if (!doc.nodes.length || viewportMode === "manual") return;
+    viewportMode === "focus" && canvas.clientWidth < 700 ? focusFirst() : fit();
+  }).observe(canvas);
+  if ("serviceWorker" in navigator) {
+    let hadController = Boolean(navigator.serviceWorker.controller);
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (hadController) {
+        if (interacted) updateToast();
+        else location.reload();
+      }
+      hadController = true;
+    });
+    window.addEventListener("load", () =>
+      navigator.serviceWorker
+        .register("./sw.js", { updateViaCache: "none" })
+        .catch(() => {}),
+    );
+  }
 }
 init();

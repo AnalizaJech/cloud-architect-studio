@@ -58,12 +58,25 @@
             id="new-btn"
             class="button ghost"
             title="Nuevo diagrama (Ctrl+N)"
+            aria-label="Nuevo diagrama"
           >
-            Nuevo</button
-          ><button id="import-btn" class="button ghost" title="Importar JSON">
-            Importar</button
-          ><button id="export-btn" class="button primary">
-            Exportar <span aria-hidden="true">↗</span>
+            <span class="icon-slot" data-icon="filePlus"></span
+            ><span class="button-label">Nuevo</span></button
+          ><button
+            id="import-btn"
+            class="button ghost"
+            title="Importar JSON"
+            aria-label="Importar JSON"
+          >
+            <span class="icon-slot" data-icon="upload"></span
+            ><span class="button-label">Importar</span></button
+          ><button
+            id="export-btn"
+            class="button primary"
+            aria-label="Exportar diagrama"
+          >
+            <span class="icon-slot" data-icon="download"></span
+            ><span class="button-label">Exportar</span>
           </button>
         </div>
       </header>
@@ -83,11 +96,11 @@
               class="icon-button mobile-only"
               aria-label="Cerrar biblioteca"
             >
-              ×
+              <span class="icon-slot" data-icon="close"></span>
             </button>
           </div>
           <label class="search"
-            ><span aria-hidden="true">⌕</span
+            ><span class="icon-slot" data-icon="search"></span
             ><input
               id="search"
               type="search"
@@ -115,7 +128,7 @@
               class="icon-button mobile-only"
               aria-label="Abrir biblioteca"
             >
-              ☷
+              <span class="icon-slot" data-icon="menu"></span>
             </button>
             <div class="tool-group">
               <button
@@ -124,21 +137,24 @@
                 aria-pressed="true"
                 title="Seleccionar (V)"
               >
-                ↖ <span>Seleccionar</span></button
+                <span class="icon-slot" data-icon="cursor"></span
+                ><span>Seleccionar</span></button
               ><button
                 id="hand-tool"
                 class="tool"
                 aria-pressed="false"
                 title="Mover lienzo (H)"
               >
-                ✋ <span>Mano</span></button
+                <span class="icon-slot" data-icon="hand"></span
+                ><span>Mano</span></button
               ><button
                 id="connect-tool"
                 class="tool"
                 aria-pressed="false"
                 title="Conectar (C)"
               >
-                ⌁ <span>Conectar</span>
+                <span class="icon-slot" data-icon="connect"></span
+                ><span>Conectar</span>
               </button>
             </div>
             <span class="separator"></span>
@@ -149,20 +165,21 @@
                 title="Deshacer (Ctrl+Z)"
                 aria-label="Deshacer"
               >
-                ↶</button
+                <span class="icon-slot" data-icon="undo"></span></button
               ><button
                 id="redo-btn"
                 class="icon-button"
                 title="Rehacer (Ctrl+Shift+Z)"
                 aria-label="Rehacer"
               >
-                ↷</button
+                <span class="icon-slot" data-icon="redo"></span></button
               ><button
                 id="layout-btn"
                 class="tool"
                 title="Organizar automáticamente"
               >
-                ⊞ <span>Auto layout</span>
+                <span class="icon-slot" data-icon="layout"></span
+                ><span>Auto layout</span>
               </button>
             </div>
             <span class="toolbar-spacer"></span>
@@ -172,14 +189,15 @@
               aria-pressed="true"
               title="Mostrar cuadrícula (G)"
             >
-              ▦ <span>Grid</span></button
+              <span class="icon-slot" data-icon="grid"></span
+              ><span>Grid</span></button
             ><button
               id="snap-btn"
               class="tool active subtle"
               aria-pressed="true"
               title="Ajustar a cuadrícula"
             >
-              ⌗ <span>Snap</span>
+              <span class="icon-slot" data-icon="snap"></span><span>Snap</span>
             </button>
             <button
               id="help-btn"
@@ -187,7 +205,7 @@
               title="Atajos de teclado"
               aria-label="Atajos de teclado"
             >
-              ?
+              <span class="icon-slot" data-icon="help"></span>
             </button>
           </div>
           <div
@@ -221,7 +239,13 @@
               </g>
             </svg>
             <div id="empty-state" class="empty-state">
-              <div class="empty-icon">◇</div>
+              <div class="empty-icon">
+                <span
+                  class="icon-slot"
+                  data-icon="sparkle"
+                  data-icon-size="58"
+                ></span>
+              </div>
               <span class="eyebrow">TU ESPACIO DE TRABAJO</span>
               <h2>Diseña lo que viene.</h2>
               <p>
@@ -229,7 +253,7 @@
                 empezar.
               </p>
               <button id="sample-btn" class="button outline">
-                Cargar ejemplo <span aria-hidden="true">↗</span>
+                <span class="icon-slot" data-icon="layout"></span>Cargar ejemplo
               </button>
             </div>
             <div class="canvas-bottom">
@@ -238,10 +262,14 @@
                 ><span id="canvas-status">Lienzo listo</span>
               </div>
               <div class="zoom-controls">
-                <button id="zoom-out" aria-label="Alejar">−</button
+                <button id="zoom-out" aria-label="Alejar">
+                  <span class="icon-slot" data-icon="minus"></span></button
                 ><button id="zoom-label" title="Restablecer zoom">100%</button
-                ><button id="zoom-in" aria-label="Acercar">+</button
-                ><button id="fit-btn" aria-label="Ajustar diagrama">⛶</button>
+                ><button id="zoom-in" aria-label="Acercar">
+                  <span class="icon-slot" data-icon="plus"></span></button
+                ><button id="fit-btn" aria-label="Ajustar diagrama">
+                  <span class="icon-slot" data-icon="fit"></span>
+                </button>
               </div>
             </div>
           </div>
@@ -254,12 +282,16 @@
               class="icon-button mobile-only"
               aria-label="Cerrar propiedades"
             >
-              ×
+              <span class="icon-slot" data-icon="close"></span>
             </button>
           </div>
           <div id="inspector-content">
             <div class="inspector-empty">
-              <span>◈</span>
+              <span
+                class="icon-slot"
+                data-icon="cursor"
+                data-icon-size="36"
+              ></span>
               <h2>Sin selección</h2>
               <p>Selecciona un componente para editar sus propiedades.</p>
             </div>

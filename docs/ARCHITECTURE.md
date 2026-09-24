@@ -20,21 +20,31 @@ Dependency direction: presentation → application → domain. The domain never 
   "version": 1,
   "title": "Untitled architecture",
   "nodes": [
-    { "id": "n1", "type": "aws-ec2", "label": "EC2", "x": 120, "y": 80 }
+    {
+      "id": "n1",
+      "type": "aws-ec2",
+      "label": "EC2",
+      "x": 120,
+      "y": 80,
+      "width": 210,
+      "height": 88,
+      "color": "#ff9900",
+      "variant": "card"
+    }
   ],
   "edges": [{ "id": "e1", "from": "n1", "to": "n2" }]
 }
 ```
 
-Coordinates are logical pixels. The viewport transform is independent of document data. History stores bounded JSON snapshots for predictable undo/redo. Import validates the document shape and filters unsupported node types and dangling edges.
+Coordinates and dimensions are logical pixels. Width, height, color and variant are optional in older files; import supplies defaults. The viewport transform is independent of document data. History stores bounded JSON snapshots for predictable undo/redo. Import validates the document shape and filters unsupported node types and dangling edges.
 
 ## Rendering and interaction
 
-The canvas uses one SVG scene for nodes, edges and grid. Pointer events translate screen coordinates into logical coordinates. The palette uses native drag and drop on desktop and click-to-place on touch or keyboard. Node dragging commits one history entry on release. Connection mode links two selected nodes. Auto layout uses layered graph placement with a cycle fallback.
+The canvas uses one SVG scene for nodes and edges, with a CSS dot grid. Original SVG pictograms are shared by the palette, canvas, controls and visual export. Pointer events translate screen coordinates into logical coordinates; interactive overlays keep their own pointer sequence. The palette uses native drag and drop on desktop and click-to-place on touch or keyboard. Node dragging commits one history entry on release. Connection mode links two selected nodes. Auto layout uses layered graph placement with a cycle fallback and variable node dimensions.
 
 ## Persistence and offline
 
-Autosave writes to IndexedDB, falling back to localStorage when IndexedDB is unavailable. The service worker precaches the app shell and serves cached resources offline. A service worker requires HTTPS or localhost, which GitHub Pages provides.
+Autosave writes to IndexedDB, falling back to localStorage when IndexedDB is unavailable. The service worker precaches the app shell and serves cached resources offline. Navigation checks the network first to pick up published releases. A service worker requires HTTPS or localhost, which GitHub Pages provides.
 
 ## Export boundaries
 

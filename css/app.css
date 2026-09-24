@@ -249,22 +249,30 @@ input:focus-visible,
   letter-spacing: 0.02em;
   cursor: pointer;
   list-style: none;
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr auto 14px;
+  align-items: center;
+  gap: 8px;
 }
 .palette-group summary::-webkit-details-marker {
   display: none;
 }
-.palette-group summary:after {
-  content: "⌄";
+.palette-chevron {
   color: #768592;
+  transition: transform 0.16s;
 }
-.palette-group:not([open]) summary:after {
-  content: "›";
+.palette-group:not([open]) .palette-chevron {
+  transform: rotate(-90deg);
 }
 .palette-count {
   color: #6d7a86;
   font-weight: 500;
+}
+.palette-empty {
+  margin: 22px 9px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
 }
 .palette-item {
   width: 100%;
@@ -290,9 +298,31 @@ input:focus-visible,
   place-items: center;
   background: color-mix(in srgb, var(--icon-color), transparent 84%);
   color: var(--icon-color);
-  font-size: 14px;
-  font-weight: 800;
   flex: none;
+}
+.palette-icon svg {
+  width: 19px;
+  height: 19px;
+}
+.icon-slot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  line-height: 0;
+}
+.icon-slot svg {
+  display: block;
+  width: 18px;
+  height: 18px;
+}
+.button,
+.tool,
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
 }
 .sidebar-foot {
   margin-top: auto;
@@ -326,7 +356,7 @@ input:focus-visible,
   gap: 4px;
 }
 .tool {
-  padding: 8px 9px;
+  padding: 8px 10px;
   white-space: nowrap;
   font-size: 12px;
 }
@@ -364,42 +394,57 @@ input:focus-visible,
   background-image: radial-gradient(circle, #35404c 1px, transparent 1px);
   background-size: 24px 24px;
 }
-.canvas svg {
+.canvas > svg {
   width: 100%;
   height: 100%;
   display: block;
   cursor: crosshair;
 }
-.canvas.hand svg {
+.canvas.hand > svg {
   cursor: grab;
 }
-.canvas.hand.dragging svg {
+.canvas.hand.dragging > svg {
   cursor: grabbing;
 }
-.canvas.connect svg {
+.canvas.connect > svg {
   cursor: crosshair;
 }
-.node > rect:first-child {
-  fill: #1f2932;
-  stroke: #495665;
+.node .node-body {
+  fill: #202b34;
+  stroke: #53616e;
   stroke-width: 1.5;
 }
-.node:hover > rect:first-child {
-  stroke: #a7bd81;
+.node.outline .node-body {
+  fill: #171e25;
+  stroke-dasharray: 5 3;
 }
-.node.selected > rect:first-child {
+.node .node-icon-bg {
+  stroke: none;
+}
+.node:hover .node-body {
+  stroke: #b8cd95;
+}
+.node.selected .node-body,
+.node:focus-visible .node-body {
   stroke: var(--accent);
-  stroke-width: 2;
+  stroke-width: 2.5;
 }
-.node text:not(.node-icon) {
-  fill: #e7ece8;
-  font-size: 13px;
-  font-weight: 600;
+.node .node-label {
+  fill: #f2f4f0;
+  font-size: 14px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
   pointer-events: none;
 }
-.node .node-icon {
-  font-size: 19px;
-  font-weight: 800;
+.node .node-provider {
+  fill: #91a0ac;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  pointer-events: none;
+}
+.node svg {
+  pointer-events: none;
 }
 .node {
   cursor: grab;
@@ -413,14 +458,20 @@ input:focus-visible,
   stroke-width: 2;
   marker-end: url(#arrow);
 }
-.edge.selected {
+.edge-group.selected .edge {
   stroke: var(--accent);
   stroke-width: 3;
 }
-.edge:focus-visible {
+.edge-group:focus-visible .edge {
   stroke: var(--accent);
   stroke-width: 4;
   outline: none;
+}
+.edge-hit {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 18;
+  cursor: pointer;
 }
 .empty-state {
   position: absolute;
@@ -435,10 +486,16 @@ input:focus-visible,
   pointer-events: auto;
 }
 .empty-icon {
-  font-size: 65px;
+  display: flex;
+  justify-content: center;
   color: var(--accent);
   line-height: 1;
   margin-bottom: 16px;
+}
+.empty-icon svg {
+  width: 58px;
+  height: 58px;
+  stroke-width: 1.25;
 }
 .empty-state h2 {
   font-size: 26px;
@@ -505,8 +562,15 @@ input:focus-visible,
   color: var(--muted);
 }
 .inspector-empty span {
-  font-size: 36px;
   color: #536273;
+}
+.inspector-empty .icon-slot {
+  width: 42px;
+  height: 42px;
+}
+.inspector-empty .icon-slot svg {
+  width: 36px;
+  height: 36px;
 }
 .inspector-empty h2 {
   color: #e3e9ea;
@@ -519,6 +583,43 @@ input:focus-visible,
 }
 .inspector-content {
   padding: 0 17px;
+}
+.inspector-summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 17px 20px;
+  min-width: 0;
+}
+.inspector-summary-icon {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  color: var(--node-color);
+  background: color-mix(in srgb, var(--node-color), transparent 86%);
+  border-radius: 10px;
+  flex: none;
+}
+.inspector-summary > span:last-child {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+.inspector-summary strong {
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.inspector-summary small {
+  font-size: 10px;
+  color: var(--muted);
+}
+.inspector-description {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
 }
 .inspector-section {
   padding: 0 17px 20px;
@@ -557,12 +658,80 @@ input:focus-visible,
   flex: 1;
   min-width: 0;
 }
+.inspector-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font-size: 11px;
+}
+.color-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin: -3px 0 20px;
+}
+.color-swatch {
+  width: 27px;
+  height: 27px;
+  display: grid;
+  place-items: center;
+  border-radius: 7px;
+  background: var(--swatch);
+  border: 2px solid transparent;
+  color: #10151a;
+}
+.color-swatch[aria-pressed="true"] {
+  outline: 2px solid var(--swatch);
+  outline-offset: 2px;
+}
+.color-swatch svg {
+  width: 14px;
+  height: 14px;
+}
+.variant-options {
+  display: flex;
+  gap: 7px;
+  margin: -3px 0 2px;
+}
+.variant-options button {
+  flex: 1;
+  padding: 8px 4px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #151c22;
+  color: var(--muted);
+  font-size: 11px;
+}
+.variant-options button[aria-pressed="true"] {
+  border-color: #93a96a;
+  color: var(--accent);
+  background: #253026;
+}
 .danger {
   color: #ff8f8f;
   background: none;
   border: 0;
   padding: 8px 0;
   font-size: 11px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.inspector-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 0;
+  background: none;
+  border: 0;
+  color: #d7e1e6;
+  font-size: 11px;
+}
+.inspector-action:hover,
+.inspector-link:hover {
+  color: var(--accent);
 }
 .inspector-foot {
   margin-top: auto;
@@ -589,6 +758,20 @@ input:focus-visible,
   padding: 11px 15px;
   box-shadow: var(--shadow);
   font-size: 12px;
+}
+.update-toast {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.update-toast button {
+  padding: 5px 8px;
+  border: 1px solid #8db86d;
+  border-radius: 5px;
+  background: #d8fb75;
+  color: #101710;
+  font-size: 11px;
+  font-weight: 700;
 }
 .dialog {
   width: min(420px, calc(100% - 24px));
@@ -630,6 +813,9 @@ input:focus-visible,
   color: var(--text);
   border: 1px solid #3a4854;
   border-radius: 7px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
 }
 .export-options button:hover {
   border-color: var(--accent);
@@ -665,7 +851,7 @@ input:focus-visible,
   .inspector.open {
     display: flex;
   }
-  .tool span {
+  .tool > span:not(.icon-slot) {
     display: none;
   }
   .brand-tag {
@@ -690,10 +876,18 @@ input:focus-visible,
   }
   .document-title input {
     width: 90px;
+    text-align: left;
   }
   .document-title #save-status,
-  .status-dot,
-  .top-actions .ghost {
+  .status-dot {
+    display: none;
+  }
+  .top-actions .button {
+    width: 34px;
+    height: 34px;
+    padding: 0;
+  }
+  .top-actions .button-label {
     display: none;
   }
   .workspace {
@@ -748,9 +942,7 @@ input:focus-visible,
 }
 @media (max-width: 390px) {
   .brand span:not(.brand-tag) {
-    max-width: 92px;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    display: none;
   }
   .document-title input {
     width: 75px;
@@ -796,7 +988,9 @@ input:focus-visible,
   display: none;
 }
 .context-menu button {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 9px;
   width: 100%;
   padding: 9px 10px;
   text-align: left;
@@ -809,8 +1003,4 @@ input:focus-visible,
 .context-menu button:hover,
 .context-menu button:focus {
   background: #394955;
-}
-.node:focus-visible > rect:first-child {
-  stroke: var(--accent);
-  stroke-width: 3;
 }

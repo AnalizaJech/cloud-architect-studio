@@ -1,5 +1,5 @@
 /* Offline application shell. Increment the version when releasing new assets. */
-const CACHE = "cloud-architect-studio-v8";
+const CACHE = "cloud-architect-studio-v12";
 const SHELL = [
   "./",
   "./index.html",
@@ -7,11 +7,13 @@ const SHELL = [
   "./js/app.js",
   "./js/modules/catalog.js",
   "./js/modules/document.js",
+  "./js/modules/geometry.js",
   "./js/services/history.js",
   "./js/services/storage.js",
   "./js/services/export.js",
   "./js/components/palette.js",
   "./js/components/scene.js",
+  "./js/components/icons.js",
   "./js/hooks/shortcuts.js",
   "./js/utils/escape.js",
   "./icons/logo.svg",
@@ -43,6 +45,25 @@ self.addEventListener("activate", (event) => {
 });
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
+  // Navigation checks the network first so published releases are visible promptly.
+  if (event.request.mode === "navigate") {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          if (response.ok) {
+            const copy = response.clone();
+            caches.open(CACHE).then((cache) => cache.put(event.request, copy));
+          }
+          return response;
+        })
+        .catch(() =>
+          caches
+            .match(event.request)
+            .then((cached) => cached || caches.match("./index.html")),
+        ),
+    );
+    return;
+  }
   event.respondWith(
     caches.match(event.request).then(
       (cached) =>

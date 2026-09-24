@@ -1,4 +1,5 @@
 import { catalog } from "../modules/catalog.js";
+import { createIcon } from "./icons.js";
 
 /** Render searchable, keyboard-usable component library. */
 export function renderPalette(container, query, onAdd) {
@@ -20,7 +21,9 @@ export function renderPalette(container, query, onAdd) {
     const count = document.createElement("span");
     count.className = "palette-count";
     count.textContent = items.length;
-    summary.append(count);
+    const chevron = createIcon("chevron", 14);
+    chevron.classList.add("palette-chevron");
+    summary.append(count, chevron);
     details.append(summary);
     for (const item of items) {
       const button = document.createElement("button");
@@ -31,7 +34,7 @@ export function renderPalette(container, query, onAdd) {
       const icon = document.createElement("span");
       icon.className = "palette-icon";
       icon.style.setProperty("--icon-color", item.color);
-      icon.textContent = item.glyph;
+      icon.append(createIcon(item.icon, 20));
       const name = document.createElement("span");
       name.textContent = item.label;
       button.append(icon, name);
@@ -43,5 +46,11 @@ export function renderPalette(container, query, onAdd) {
       details.append(button);
     }
     container.append(details);
+  }
+  if (!container.childElementCount) {
+    const empty = document.createElement("p");
+    empty.className = "palette-empty";
+    empty.textContent = "No hay componentes para esta búsqueda.";
+    container.append(empty);
   }
 }

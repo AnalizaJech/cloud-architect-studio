@@ -1,1 +1,99 @@
-{"version":1,"title":"Plataforma cloud","nodes":[{"id":"n1","type":"github","label":"GitHub","x":80,"y":180},{"id":"n2","type":"argocd","label":"ArgoCD","x":320,"y":180},{"id":"n3","type":"kubernetes","label":"Kubernetes","x":560,"y":180},{"id":"n4","type":"prometheus","label":"Prometheus","x":800,"y":100},{"id":"n5","type":"grafana","label":"Grafana","x":1040,"y":100},{"id":"n6","type":"postgresql","label":"PostgreSQL","x":800,"y":300}],"edges":[{"id":"e1","from":"n1","to":"n2"},{"id":"e2","from":"n2","to":"n3"},{"id":"e3","from":"n3","to":"n4"},{"id":"e4","from":"n4","to":"n5"},{"id":"e5","from":"n3","to":"n6"}]}
+{
+  "version": 1,
+  "title": "Plataforma cloud",
+  "nodes": [
+    {
+      "id": "sample-0",
+      "type": "github",
+      "label": "GitHub",
+      "x": 80,
+      "y": 100,
+      "width": 210,
+      "height": 88,
+      "color": "#e7e7e7",
+      "variant": "card"
+    },
+    {
+      "id": "sample-1",
+      "type": "argocd",
+      "label": "ArgoCD",
+      "x": 390,
+      "y": 100,
+      "width": 210,
+      "height": 88,
+      "color": "#ef7b4d",
+      "variant": "card"
+    },
+    {
+      "id": "sample-2",
+      "type": "kubernetes",
+      "label": "Kubernetes",
+      "x": 700,
+      "y": 100,
+      "width": 210,
+      "height": 88,
+      "color": "#326ce5",
+      "variant": "card"
+    },
+    {
+      "id": "sample-3",
+      "type": "prometheus",
+      "label": "Prometheus",
+      "x": 390,
+      "y": 325,
+      "width": 210,
+      "height": 88,
+      "color": "#e6522c",
+      "variant": "card"
+    },
+    {
+      "id": "sample-4",
+      "type": "grafana",
+      "label": "Grafana",
+      "x": 80,
+      "y": 325,
+      "width": 210,
+      "height": 88,
+      "color": "#f46800",
+      "variant": "card"
+    },
+    {
+      "id": "sample-5",
+      "type": "postgresql",
+      "label": "PostgreSQL",
+      "x": 700,
+      "y": 325,
+      "width": 210,
+      "height": 88,
+      "color": "#6b9ac4",
+      "variant": "card"
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-0",
+      "from": "sample-0",
+      "to": "sample-1"
+    },
+    {
+      "id": "edge-1",
+      "from": "sample-1",
+      "to": "sample-2"
+    },
+    {
+      "id": "edge-2",
+      "from": "sample-2",
+      "to": "sample-3"
+    },
+    {
+      "id": "edge-3",
+      "from": "sample-3",
+      "to": "sample-4"
+    },
+    {
+      "id": "edge-4",
+      "from": "sample-2",
+      "to": "sample-5"
+    }
+  ]
+}
