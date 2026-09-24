@@ -1,0 +1,284 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#11151b" />
+    <meta
+      name="description"
+      content="Diseña diagramas de arquitectura cloud en un editor visual, privado y sin conexión."
+    />
+    <meta property="og:type" content="website" />
+    <meta
+      property="og:url"
+      content="https://analizajech.github.io/cloud-architect-studio/"
+    />
+    <meta property="og:title" content="Cloud Architect Studio" />
+    <meta
+      property="og:description"
+      content="Editor visual de arquitecturas cloud, libre y sin conexión."
+    />
+    <meta property="og:image" content="assets/social-card.svg" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Cloud Architect Studio" />
+    <meta name="twitter:image" content="assets/social-card.svg" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; worker-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'"
+    />
+    <link rel="icon" href="icons/favicon.svg" type="image/svg+xml" />
+    <link
+      rel="canonical"
+      href="https://analizajech.github.io/cloud-architect-studio/"
+    />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="stylesheet" href="css/app.css" />
+    <title>Cloud Architect Studio</title>
+  </head>
+  <body>
+    <a class="skip-link" href="#canvas">Saltar al lienzo</a>
+    <div id="app" class="app">
+      <header class="topbar">
+        <div class="brand">
+          <img src="icons/logo.svg" alt="" width="30" height="30" /><span
+            >Cloud Architect <b>Studio</b></span
+          ><span class="brand-tag">BETA</span>
+        </div>
+        <div class="document-title">
+          <span class="status-dot"></span
+          ><input
+            id="title"
+            aria-label="Nombre del diagrama"
+            value="Arquitectura sin título"
+            maxlength="80"
+          /><span id="save-status">Guardado</span>
+        </div>
+        <div class="top-actions">
+          <button
+            id="new-btn"
+            class="button ghost"
+            title="Nuevo diagrama (Ctrl+N)"
+          >
+            Nuevo</button
+          ><button id="import-btn" class="button ghost" title="Importar JSON">
+            Importar</button
+          ><button id="export-btn" class="button primary">
+            Exportar <span aria-hidden="true">↗</span>
+          </button>
+        </div>
+      </header>
+      <div class="workspace">
+        <aside
+          id="sidebar"
+          class="sidebar"
+          aria-label="Biblioteca de componentes"
+        >
+          <div class="sidebar-head">
+            <div>
+              <span class="eyebrow">BIBLIOTECA</span>
+              <h1>Componentes</h1>
+            </div>
+            <button
+              id="sidebar-close"
+              class="icon-button mobile-only"
+              aria-label="Cerrar biblioteca"
+            >
+              ×
+            </button>
+          </div>
+          <label class="search"
+            ><span aria-hidden="true">⌕</span
+            ><input
+              id="search"
+              type="search"
+              placeholder="Buscar componente..."
+              aria-label="Buscar componente"
+            /><kbd>/</kbd></label
+          >
+          <div id="palette" class="palette">
+            <div class="skeleton" aria-hidden="true"></div>
+            <div class="skeleton" aria-hidden="true"></div>
+            <div class="skeleton" aria-hidden="true"></div>
+          </div>
+          <div class="sidebar-foot">
+            <span class="pulse"></span> Arrastra al lienzo o toca para añadir
+          </div>
+        </aside>
+        <main class="editor">
+          <div
+            class="toolbar"
+            role="toolbar"
+            aria-label="Herramientas del lienzo"
+          >
+            <button
+              id="sidebar-toggle"
+              class="icon-button mobile-only"
+              aria-label="Abrir biblioteca"
+            >
+              ☷
+            </button>
+            <div class="tool-group">
+              <button
+                id="select-tool"
+                class="tool active"
+                aria-pressed="true"
+                title="Seleccionar (V)"
+              >
+                ↖ <span>Seleccionar</span></button
+              ><button
+                id="hand-tool"
+                class="tool"
+                aria-pressed="false"
+                title="Mover lienzo (H)"
+              >
+                ✋ <span>Mano</span></button
+              ><button
+                id="connect-tool"
+                class="tool"
+                aria-pressed="false"
+                title="Conectar (C)"
+              >
+                ⌁ <span>Conectar</span>
+              </button>
+            </div>
+            <span class="separator"></span>
+            <div class="tool-group">
+              <button
+                id="undo-btn"
+                class="icon-button"
+                title="Deshacer (Ctrl+Z)"
+                aria-label="Deshacer"
+              >
+                ↶</button
+              ><button
+                id="redo-btn"
+                class="icon-button"
+                title="Rehacer (Ctrl+Shift+Z)"
+                aria-label="Rehacer"
+              >
+                ↷</button
+              ><button
+                id="layout-btn"
+                class="tool"
+                title="Organizar automáticamente"
+              >
+                ⊞ <span>Auto layout</span>
+              </button>
+            </div>
+            <span class="toolbar-spacer"></span>
+            <button
+              id="grid-btn"
+              class="tool active subtle"
+              aria-pressed="true"
+              title="Mostrar cuadrícula (G)"
+            >
+              ▦ <span>Grid</span></button
+            ><button
+              id="snap-btn"
+              class="tool active subtle"
+              aria-pressed="true"
+              title="Ajustar a cuadrícula"
+            >
+              ⌗ <span>Snap</span>
+            </button>
+            <button
+              id="help-btn"
+              class="icon-button"
+              title="Atajos de teclado"
+              aria-label="Atajos de teclado"
+            >
+              ?
+            </button>
+          </div>
+          <div
+            id="canvas"
+            class="canvas show-grid"
+            tabindex="0"
+            aria-label="Lienzo del diagrama. Arrastra componentes para añadirlos."
+          >
+            <svg
+              id="scene"
+              xmlns="http://www.w3.org/2000/svg"
+              role="group"
+              aria-label="Componentes y conexiones del diagrama"
+            >
+              <defs>
+                <marker
+                  id="arrow"
+                  viewBox="0 0 10 10"
+                  refX="9"
+                  refY="5"
+                  markerWidth="7"
+                  markerHeight="7"
+                  orient="auto-start-reverse"
+                >
+                  <path d="M 0 0 L 10 5 L 0 10 z" fill="#8997a8" />
+                </marker>
+              </defs>
+              <g id="viewport">
+                <g id="edges"></g>
+                <g id="nodes"></g>
+              </g>
+            </svg>
+            <div id="empty-state" class="empty-state">
+              <div class="empty-icon">◇</div>
+              <span class="eyebrow">TU ESPACIO DE TRABAJO</span>
+              <h2>Diseña lo que viene.</h2>
+              <p>
+                Arrastra componentes desde la biblioteca o toca uno para
+                empezar.
+              </p>
+              <button id="sample-btn" class="button outline">
+                Cargar ejemplo <span aria-hidden="true">↗</span>
+              </button>
+            </div>
+            <div class="canvas-bottom">
+              <div class="canvas-hint">
+                <span class="hint-dot"></span
+                ><span id="canvas-status">Lienzo listo</span>
+              </div>
+              <div class="zoom-controls">
+                <button id="zoom-out" aria-label="Alejar">−</button
+                ><button id="zoom-label" title="Restablecer zoom">100%</button
+                ><button id="zoom-in" aria-label="Acercar">+</button
+                ><button id="fit-btn" aria-label="Ajustar diagrama">⛶</button>
+              </div>
+            </div>
+          </div>
+        </main>
+        <aside id="inspector" class="inspector" aria-label="Propiedades">
+          <div class="inspector-head">
+            <span class="eyebrow">INSPECTOR</span
+            ><button
+              id="inspector-close"
+              class="icon-button mobile-only"
+              aria-label="Cerrar propiedades"
+            >
+              ×
+            </button>
+          </div>
+          <div id="inspector-content">
+            <div class="inspector-empty">
+              <span>◈</span>
+              <h2>Sin selección</h2>
+              <p>Selecciona un componente para editar sus propiedades.</p>
+            </div>
+          </div>
+          <div class="inspector-foot">
+            <span>Cloud Architect Studio</span><span>v1.0</span>
+          </div>
+        </aside>
+      </div>
+    </div>
+    <div
+      id="toast-region"
+      class="toast-region"
+      role="status"
+      aria-live="polite"
+    ></div>
+    <div id="context-menu" class="context-menu" role="menu" hidden></div>
+    <dialog id="dialog" class="dialog"><div id="dialog-content"></div></dialog>
+    <input id="file-input" type="file" accept=".json,application/json" hidden />
+    <script type="module" src="js/app.js"></script>
+  </body>
+</html>
