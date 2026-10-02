@@ -1,59 +1,42 @@
 # Architecture — Cloud Architect Studio
 
-## Scope and constraints
+Cloud Architect Studio is a client-only editor. Vite compiles the React application into static files for GitHub Pages. See [the migration decisions](MIGRATION_ARCHITECTURE.md) for the boundaries and visual direction.
 
-Cloud Architect Studio is a static, client-only application. `index.html` is the entry point and every asset is served by a relative URL so the same build works at a GitHub Pages project path. No build step or server API is required.
+## Dependency direction
 
-## Layers
+```mermaid
+flowchart LR
+  React[React workbench] --> Hook[useDiagram]
+  React --> Flow[React Flow]
+  Hook --> Domain[Document v1 and catalog]
+  Hook --> Storage[IndexedDB/localStorage]
+  React --> Export[Export adapters]
+  Export --> Domain
+```
 
-1. **Domain (`js/modules/`)** — diagram schema, catalog and graph operations. Data is plain JSON and has no DOM dependency.
-2. **Application (`js/services/`)** — commands/history, persistence and export adapters. Export formats consume the same document snapshot.
-3. **Presentation (`js/components/`, `js/hooks/`, `js/app.js`)** — DOM rendering, pointer/keyboard interactions, dialogs and notifications.
-4. **Platform (`js/utils/`)** — escaping, IDs, downloads and feature detection.
-
-Dependency direction: presentation → application → domain. The domain never imports presentation or browser storage.
+The `DiagramDocument` version 1 schema remains the canonical source of truth. React Flow receives projected nodes and edges and sends edits back to this schema. This preserves existing JSON files, IndexedDB records and exports. The domain modules do not import React.
 
 ## Document contract
 
 ```json
 {
   "version": 1,
-  "title": "Untitled architecture",
-  "nodes": [
-    {
-      "id": "n1",
-      "type": "aws-ec2",
-      "label": "EC2",
-      "x": 120,
-      "y": 80,
-      "width": 210,
-      "height": 88,
-      "color": "#ff9900",
-      "variant": "card"
-    }
-  ],
-  "edges": [{ "id": "e1", "from": "n1", "to": "n2" }]
+  "title": "Arquitectura sin título",
+  "nodes": [{ "id": "n1", "type": "aws-ec2", "label": "EC2", "x": 120, "y": 80, "width": 210, "height": 88, "color": "#ff9900", "variant": "card" }],
+  "edges": []
 }
 ```
 
-Coordinates and dimensions are logical pixels. Width, height, color and variant are optional in older files; import supplies defaults. The viewport transform is independent of document data. History stores bounded JSON snapshots for predictable undo/redo. Import validates the document shape and filters unsupported node types and dangling edges.
+Coordinates and dimensions are logical canvas pixels. Import normalizes legacy records and rejects invalid node types, duplicate IDs and dangling edges. Discrete edits push bounded history snapshots; a drag gesture records one snapshot at its end.
 
-## Rendering and interaction
+## Persistence and export
 
-The canvas uses one SVG scene for nodes and edges, with a CSS dot grid. Original SVG pictograms are shared by the palette, canvas, controls and visual export. Pointer events translate screen coordinates into logical coordinates; interactive overlays keep their own pointer sequence. The palette uses native drag and drop on desktop and click-to-place on touch or keyboard. Node dragging commits one history entry on release. Connection mode links two selected nodes. Auto layout uses layered graph placement with a cycle fallback and variable node dimensions.
+Autosave writes the document to the existing IndexedDB database and key, with localStorage as a fallback. Export adapters generate SVG, PNG, PDF via print, Draw.io, Mermaid, PlantUML and JSON from the same document. The service worker is generated at build time and precaches versioned assets.
 
-## Persistence and offline
+## Deployment
 
-Autosave writes to IndexedDB, falling back to localStorage when IndexedDB is unavailable. The service worker precaches the app shell and serves cached resources offline. Navigation checks the network first to pick up published releases. A service worker requires HTTPS or localhost, which GitHub Pages provides.
+`vite.config.ts` sets the GitHub Pages project base path. GitHub Actions runs tests and the production build, then publishes `dist/`. Browser execution needs neither Node nor a backend. Local development uses `npm run dev`; `file://index.html` is unsupported.
 
-## Export boundaries
+## Accessibility and security
 
-SVG is the canonical visual export. PNG rasterizes that SVG. PDF uses the browser print dialog with an SVG print sheet. Draw.io, Mermaid and PlantUML are generated from the graph model. Text exports prioritize round-trip readability; Draw.io exports valid `mxGraphModel` XML.
-
-## Security and accessibility
-
-All user text is inserted with DOM `textContent` or escaped in serialized XML/text formats. No HTML from documents is evaluated. A restrictive CSP allows only same-origin scripts/styles. Controls expose labels, focus states and keyboard operations. Motion is reduced when requested.
-
-## Performance target
-
-The dependency-free app aims for Lighthouse ≥95 on a production GitHub Pages deployment. This is a target, not a measured result; test with the published URL because local Lighthouse scores vary by device and network.
+Controls have labels and visible focus. HTML semantics remain in use even though visual controls are custom styled. Untrusted document data is validated; exported XML escapes text. The CSP blocks external scripts and allows inline styles for graph positioning. The React Flow canvas requires additional keyboard and screen reader auditing before claiming WCAG 2.2 AA conformance.

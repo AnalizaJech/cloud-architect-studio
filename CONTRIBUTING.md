@@ -8,4 +8,4 @@ Thanks for improving Cloud Architect Studio.
 4. Test desktop and 360px mobile layout, keyboard use, import/export, and offline behavior.
 5. Open a pull request with screenshots for visual changes and clear reproduction steps for bug fixes.
 
-The app has no mandatory build step. Use a local static server such as `python -m http.server 8000` for testing. Please keep new dependencies exceptional and justify them in the pull request.
+Run `npm ci`, `npm run dev`, `npm test` and `npm run build` before opening a pull request. GitHub Pages serves only the generated `dist/` files; Node is needed for development and CI, not in the browser. Keep the v1 document format compatible with existing saved diagrams. Justify new dependencies in the pull request.

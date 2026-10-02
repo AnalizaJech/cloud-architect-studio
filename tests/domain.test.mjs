@@ -6,6 +6,9 @@ import {
   autoLayout,
 } from "../js/modules/document.js";
 import { toSvg, toDrawio } from "../js/services/export.js";
+import { catalog } from "../js/modules/catalog.js";
+import { technologyIcons } from "../js/modules/technology-icons.js";
+import { existsSync } from "node:fs";
 import {
   DEFAULT_WIDTH,
   DEFAULT_HEIGHT,
@@ -59,8 +62,20 @@ test("exports preserve customized dimensions and SVG icons", () => {
   assert.match(svg, /width="280"/);
   assert.match(svg, /stroke="#b39afa"/);
   assert.match(svg, /<path d="/);
+  assert.match(svg, /<svg x="23"[^>]*viewBox=/);
   assert.match(drawio, /width="280"/);
   assert.match(drawio, /strokeColor=#b39afa/);
+});
+
+test("every catalog entry has a local technology icon and embedded export artwork", () => {
+  assert.equal(catalog.length, 33);
+  for (const item of catalog) {
+    assert.ok(technologyIcons[item.id], `Missing embedded icon: ${item.id}`);
+    assert.ok(
+      existsSync(new URL(`../public/icons/technologies/${item.id}.svg`, import.meta.url)),
+      `Missing local SVG: ${item.id}`,
+    );
+  }
 });
 
 test("layout and connectors account for variable node size", () => {

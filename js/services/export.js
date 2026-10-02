@@ -6,7 +6,7 @@ import {
   nodeHeight,
   nodeWidth,
 } from "../modules/geometry.js";
-import { iconMarkup } from "../components/icons.js";
+import { technologyIcons } from "../modules/technology-icons.js";
 import { escapeXml, download } from "../utils/escape.js";
 
 /** Bounds shared by raster and vector output. */
@@ -28,6 +28,17 @@ function bounds(nodes) {
   };
 }
 /** Produce a standalone SVG with no external resources. */
+function technologyMarkup(type, index, x, y, size) {
+  const icon = technologyIcons[type];
+  if (!icon) return "";
+  const prefix = `technology-${index}-`;
+  const body = icon.body
+    .replace(/\bid="([^"]+)"/g, (_, id) => `id="${prefix}${id}"`)
+    .replace(/url\(#([^)]+)\)/g, (_, id) => `url(#${prefix}${id})`)
+    .replace(/\bhref="#([^"]+)"/g, (_, id) => `href="#${prefix}${id}"`);
+  return `<svg x="${x}" y="${y}" width="${size}" height="${size}" viewBox="${icon.viewBox}" preserveAspectRatio="xMidYMid meet">${body}</svg>`;
+}
+
 export function toSvg(doc) {
   const b = bounds(doc.nodes),
     byId = new Map(doc.nodes.map((n) => [n.id, n]));
@@ -40,7 +51,7 @@ export function toSvg(doc) {
     })
     .join("");
   const nodes = doc.nodes
-    .map((n) => {
+    .map((n, index) => {
       const meta = catalogById.get(n.type);
       if (!meta) return "";
       const width = nodeWidth(n),
@@ -56,7 +67,8 @@ export function toSvg(doc) {
         .join("");
       const fill = n.variant === "outline" ? "#171e25" : "#202b34";
       const dash = n.variant === "outline" ? ' stroke-dasharray="5 3"' : "";
-      return `<g transform="translate(${n.x} ${n.y})"><rect width="${width}" height="${height}" rx="${n.variant === "outline" ? 7 : 12}" fill="${fill}" stroke="#53616e" stroke-width="1.5"${dash}/><rect x="14" y="${(height - 48) / 2}" width="48" height="48" rx="9" fill="${color}" fill-opacity=".16"/>${iconMarkup(meta.icon, 24.5, (height - 27) / 2, 27, color)}<text x="78" fill="#f2f4f0" font-size="14" font-weight="600" font-family="sans-serif">${label}</text><text x="78" y="${height / 2 + 25}" fill="#91a0ac" font-size="10" font-family="sans-serif">${escapeXml(meta.group)}</text></g>`;
+      const iconBackground = ["port", "github", "kafka"].includes(n.type) ? "#f3f6f7" : color;
+      return `<g transform="translate(${n.x} ${n.y})"><rect width="${width}" height="${height}" rx="${n.variant === "outline" ? 7 : 12}" fill="${fill}" stroke="${color}" stroke-width="1.5"${dash}/><rect x="14" y="${(height - 48) / 2}" width="48" height="48" rx="9" fill="${iconBackground}" fill-opacity="${iconBackground === color ? ".16" : "1"}"/>${technologyMarkup(n.type, index, 23, (height - 30) / 2, 30)}<text x="78" fill="#f2f4f0" font-size="14" font-weight="600" font-family="sans-serif">${label}</text><text x="78" y="${height / 2 + 25}" fill="#91a0ac" font-size="10" font-family="sans-serif">${escapeXml(meta.group)}</text></g>`;
     })
     .join("");
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${Math.ceil(b.width)}" height="${Math.ceil(b.height)}" viewBox="${b.x} ${b.y} ${b.width} ${b.height}"><defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#91a1ad"/></marker></defs><rect x="${b.x}" y="${b.y}" width="${b.width}" height="${b.height}" fill="#11161d"/>${edges}${nodes}</svg>`;

@@ -6,9 +6,9 @@
 
 **Diseña arquitecturas cloud con claridad.**
 
-Editor visual, privado y sin conexión. HTML, CSS y JavaScript nativos; listo para GitHub Pages.
+Editor visual, privado y sin conexión. React, TypeScript y React Flow; publicado como archivos estáticos en GitHub Pages.
 
-![MIT](https://img.shields.io/badge/license-MIT-d8fb75) ![No build](https://img.shields.io/badge/build-none-27313b) ![PWA](https://img.shields.io/badge/PWA-offline-27313b) ![Dependencies](https://img.shields.io/badge/runtime_dependencies-0-27313b)
+![MIT](https://img.shields.io/badge/license-MIT-d8fb75) ![Build](https://img.shields.io/badge/build-Vite-27313b) ![PWA](https://img.shields.io/badge/PWA-offline-27313b) ![React Flow](https://img.shields.io/badge/canvas-React_Flow-27313b)
 
 ![Banner de Cloud Architect Studio](assets/social-card.svg)
 
@@ -37,7 +37,7 @@ El GIF alterna dos capturas reales del editor: el lienzo vacío y el ejemplo car
 ## Características
 
 - Biblioteca de 33 componentes de AWS, Azure, GCP, GitHub, GitLab, Kubernetes, Docker, Terraform, ArgoCD, Jenkins, Port, Backstage, n8n, Kafka, Redis, PostgreSQL, MongoDB, RabbitMQ, Grafana, Prometheus, Loki, Tempo y OpenTelemetry.
-- Iconos SVG originales en la biblioteca, los controles, los nodos y las exportaciones visuales; sin emoji ni imágenes remotas.
+- Iconos SVG específicos para las 33 tecnologías en la biblioteca, los nodos y las exportaciones visuales; disponibles sin conexión. Los controles usan iconos Lucide. [Fuentes y condiciones de uso](docs/ICONS.md).
 - Arrastrar y soltar con mouse; tocar para colocar con teclado o pantalla táctil.
 - Conexiones entre componentes, inspector, auto layout, cuadrícula, snap, zoom de 2 % a 3200 %, pan, undo y redo.
 - Personalización por nodo: nombre, posición, ancho, alto, color y estilo de tarjeta o contorno. Los diagramas JSON antiguos siguen siendo compatibles.
@@ -48,22 +48,27 @@ El GIF alterna dos capturas reales del editor: el lienzo vacío y el ejemplo car
 
 ## Tecnologías
 
-HTML5, CSS3, JavaScript ES2025, SVG, IndexedDB, Service Worker y Web App Manifest. No se requieren librerías de ejecución, Node ni backend.
+React 19, TypeScript, Vite, React Flow, Lucide SVG, CSS, IndexedDB y vite-plugin-pwa. No hay backend; Node se usa para desarrollar y generar los archivos estáticos.
+
+La marca visual de React Flow está oculta en el lienzo para dejar libre el espacio de trabajo. React Flow sigue reconocido aquí y en las dependencias del proyecto.
 
 ## Instalación y desarrollo
 
-Clona o descarga el repositorio. Abre un servidor estático desde la raíz:
+Clona el repositorio e instala las dependencias:
 
 ```bash
-python -m http.server 8000
+npm ci
+npm run dev
 ```
 
-Visita `http://localhost:8000/`. Los módulos JavaScript y el Service Worker requieren HTTP local o HTTPS; abrir `index.html` directamente como archivo puede impedir su carga.
+Abre la URL mostrada por Vite. `index.html` ya no se ejecuta directamente con `file://`; debe compilarse o servirse con Vite.
 
-Pruebas de dominio y exportación (Node solo se usa para desarrollo, no para ejecutar la app):
+Pruebas y compilación de producción:
 
 ```bash
-node --test tests/domain.test.mjs
+npm test
+npm run build
+npm run preview
 ```
 
 ## Uso
@@ -80,20 +85,18 @@ node --test tests/domain.test.mjs
 | Seleccionar / mover / conectar | `V` / `H` / `C`           |
 | Deshacer / rehacer             | `Ctrl+Z` / `Ctrl+Shift+Z` |
 | Buscar componente              | `/`                       |
-| Mostrar cuadrícula             | `G`                       |
-| Acercar / alejar               | `+` / `-`                 |
 | Eliminar selección             | `Supr`                    |
-| Exportar JSON                  | `Ctrl+S`                  |
+| Duplicar componente            | `Ctrl+D`                  |
 
 En macOS, usa `⌘` en lugar de `Ctrl`.
 
 ## Arquitectura
 
-Consulta [la descripción completa](docs/ARCHITECTURE.md). Las dependencias apuntan hacia el dominio y las exportaciones usan el mismo documento versionado.
+Consulta [la arquitectura de migración](docs/MIGRATION_ARCHITECTURE.md). El modelo de documento v1 y la clave de IndexedDB siguen siendo compatibles con la versión anterior.
 
 ```mermaid
 flowchart LR
-  UI[Presentación / SVG] --> APP[Servicios de aplicación]
+  UI[React + React Flow] --> APP[Hook de edición y servicios]
   APP --> DOMAIN[Documento y catálogo]
   APP --> PLATFORM[IndexedDB / archivos / SW]
 ```
@@ -104,7 +107,7 @@ flowchart LR
 flowchart LR
   INPUT[Pointer / teclado / importación] --> VALIDATE[Validación y comandos]
   VALIDATE --> DOC[Documento versionado]
-  DOC --> VIEW[Render SVG]
+  DOC --> VIEW[Proyección React Flow]
   DOC --> SAVE[IndexedDB]
   DOC --> EXPORT[Adaptadores de exportación]
 ```
@@ -112,53 +115,46 @@ flowchart LR
 ### Estructura de carpetas
 
 ```text
-assets/       Identidad visual y medios
-css/          Tokens, diseño adaptable y estados
-js/app.js     Composición de la aplicación
-js/components/  Componentes DOM y SVG
-js/modules/     Dominio, geometría y catálogo
-js/services/    Historial, persistencia y exportación
-js/utils/       Escapado y descargas
-js/hooks/       Atajos e interacciones
-components/ modules/ services/ utils/ hooks/  Espacios para recursos futuros
-icons/        Logo y pictogramas PWA
-fonts/        Política de tipografía
+src/          Componentes React, estado y diseño visual
+js/modules/   Dominio, geometría y catálogo compatibles con v1
+js/services/  Persistencia y adaptadores de exportación
+js/utils/     Escapado y descargas
+public/       Iconos, metadatos y medios estáticos
 docs/         Arquitectura y material de proyecto
 examples/     Diagramas de ejemplo
 tests/        Pruebas de compatibilidad, geometría y exportación
+dist/         Salida generada por Vite; no se versiona
 ```
 
 ## Deploy en GitHub Pages
 
-1. Publica los archivos en la raíz de un repositorio GitHub.
-2. En **Settings → Pages**, selecciona **Deploy from a branch**, rama `master`, carpeta `/ (root)`.
-3. Espera la URL `https://analizajech.github.io/cloud-architect-studio/`.
-4. Si cambias el propietario o repositorio, actualiza `sitemap.xml`, `robots.txt`, los metadatos de `index.html` y la sección **Demo online**.
-5. Comprueba instalación PWA, carga sin conexión e importación/exportación desde la URL publicada.
+1. En **Settings → Pages**, selecciona **GitHub Actions** como fuente de publicación.
+2. Al publicar `master`, el flujo `.github/workflows/deploy.yml` ejecuta tests, compila y sube `dist/`.
+3. Abre `https://analizajech.github.io/cloud-architect-studio/` y comprueba carga, PWA e importación/exportación.
+4. Si cambias el nombre del repositorio, actualiza `base` en `vite.config.ts`, los metadatos y las URLs de `public/robots.txt` y `public/sitemap.xml`.
 
-Todas las rutas son relativas y funcionan bajo un subdirectorio de GitHub Pages.
+Vite configura las rutas del proyecto para `/cloud-architect-studio/`. Los usuarios finales reciben solo archivos estáticos.
 
 ## Performance y benchmark
 
 | Métrica                   | Resultado local             |
 | ------------------------- | --------------------------- |
-| Dependencias de ejecución | 0                           |
-| Build obligatorio         | Ninguno                     |
-| Carga offline             | Service Worker con precache |
-| Lighthouse Performance    | **99**                      |
-| Lighthouse Accessibility  | **100**                     |
-| Lighthouse Best Practices | **100**                     |
-| Lighthouse SEO            | **100**                     |
+| Build de producción       | Vite + TypeScript           |
+| Carga offline             | PWA con precache versionado |
+| Lighthouse local: rendimiento | **97** |
+| Lighthouse local: accesibilidad | **100** |
+| Lighthouse local: prácticas recomendadas | **96** |
+| Lighthouse local: SEO | **100** |
 
-Medición: Lighthouse 12.8.2, Chrome headless, `http://localhost:8765/`, 24 de septiembre de 2026. [Informe JSON completo](docs/lighthouse-local.json). Estos números describen esa ejecución local; comprueba la URL publicada para medir el rendimiento real de GitHub Pages. Para grafos muy grandes, el siguiente paso es renderizado incremental y virtualización.
+Medición del build v2 con Lighthouse 12.8.2 en Chrome headless y Vite Preview local, 1 de octubre de 2026: [informe JSON](docs/lighthouse-v2-local.json). La [medición anterior](docs/lighthouse-local.json) corresponde a la versión 1. Los resultados de la URL publicada pueden variar. Para grafos muy grandes, el siguiente paso es virtualización.
 
 ## Accesibilidad
 
-Incluye salto al contenido, navegación de controles mediante teclado, movimiento de nodos con flechas, conexión mediante la herramienta y Enter, etiquetas para acciones, estados `aria-pressed`, foco visible y preferencia de movimiento reducido. El objetivo es WCAG 2.2 AA; se recomienda una auditoría con teclado, lector de pantalla y axe/Lighthouse sobre el sitio desplegado.
+Incluye salto al contenido, controles con etiquetas, foco visible, atajos, estados `aria-pressed` y preferencia de movimiento reducido. El objetivo es WCAG 2.2 AA; quedan por verificar en detalle el manejo de foco de los diálogos y la edición del lienzo con lector de pantalla.
 
 ## Seguridad y privacidad
 
-La app no transmite diagramas. El contenido importado se valida y el texto se inserta con APIs DOM seguras o se escapa para XML. CSP restringe scripts, estilos y recursos a la misma fuente. Consulta [SECURITY.md](SECURITY.md).
+La app no transmite diagramas. El contenido importado se valida y el texto se escapa para XML. La CSP mantiene scripts y recursos en el mismo origen; permite estilos inline necesarios para las posiciones dinámicas de React Flow. Consulta [SECURITY.md](SECURITY.md).
 
 ## Roadmap
 
@@ -181,9 +177,9 @@ La app no transmite diagramas. El contenido importado se valida y el texto se in
 
 ## Troubleshooting
 
-- **Pantalla vacía al abrir un archivo local:** usa un servidor HTTP local.
+- **Pantalla vacía al abrir `index.html` con `file://`:** esta versión requiere `npm run dev` o los archivos compilados de `npm run build` servidos por HTTP.
 - **PWA sin instalación:** comprueba HTTPS, manifiesto, iconos PNG y compatibilidad del navegador.
-- **Cambios antiguos tras desplegar:** cierra pestañas existentes y recarga. Incrementa la versión de caché en `sw.js` al publicar cambios.
+- **Cambios antiguos tras desplegar:** cierra pestañas existentes y recarga. La PWA generada por Vite versiona automáticamente sus activos.
 - **Datos locales perdidos:** el almacenamiento del navegador puede limpiarse; exporta JSON periódicamente.
 
 ## Contribuciones, créditos y licencia

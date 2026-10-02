@@ -2,6 +2,18 @@
 
 All notable changes follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) conventions.
 
+## [2.0.0] - Unreleased
+
+### Changed
+
+- Migrated the interface and diagram canvas to React, TypeScript, Vite and React Flow.
+- Redesigned the workbench, library, inspector and controls with a responsive visual system.
+- Added a GitHub Actions build for static GitHub Pages deployment and generated offline PWA assets.
+- Preserved the version 1 diagram format, existing browser storage and all seven export options.
+- Added 33 locally hosted technology SVGs to the library, nodes and self-contained image exports.
+- Removed the React Flow attribution widget from the canvas and documented its use in the README.
+- Deferred the export engine until requested and removed an empty minimap.
+
 ## [1.1.0] - 2026-09-24
 
 ### Fixed
