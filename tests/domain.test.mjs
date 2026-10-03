@@ -13,6 +13,7 @@ import {
   DEFAULT_WIDTH,
   DEFAULT_HEIGHT,
   edgePath,
+  preferredPorts,
 } from "../js/modules/geometry.js";
 
 test("legacy diagrams receive safe geometry and provider defaults", () => {
@@ -84,6 +85,22 @@ test("layout and connectors account for variable node size", () => {
   const arranged = autoLayout(doc);
   assert.ok(arranged.nodes[1].x >= arranged.nodes[0].x + 400);
   assert.match(edgePath(doc.nodes[0], doc.nodes[1]), /^M /);
+});
+
+test("four-sided ports persist safely and guide SVG connector anchors", () => {
+  const doc = sampleDocument();
+  doc.edges[0].fromHandle = "bottom";
+  doc.edges[0].toHandle = "top";
+  const restored = normalizeDocument(doc);
+  assert.equal(restored.edges[0].fromHandle, "bottom");
+  assert.equal(restored.edges[0].toHandle, "top");
+  assert.equal(preferredPorts(doc.nodes[0], doc.nodes[1]).source, "right");
+  const startX = doc.nodes[0].x + doc.nodes[0].width / 2;
+  const startY = doc.nodes[0].y + doc.nodes[0].height;
+  assert.ok(edgePath(doc.nodes[0], doc.nodes[1], "bottom", "top").startsWith(`M ${startX} ${startY}`));
+  assert.match(toSvg(restored), new RegExp(`M ${startX} ${startY} C`));
+  doc.edges[0].fromHandle = "javascript:alert(1)";
+  assert.equal(normalizeDocument(doc).edges[0].fromHandle, undefined);
 });
 
 test("import rejects IDs that collide after length normalization", () => {

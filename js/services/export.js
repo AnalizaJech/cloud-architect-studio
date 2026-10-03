@@ -47,7 +47,7 @@ export function toSvg(doc) {
       const source = byId.get(e.from),
         target = byId.get(e.to);
       if (!source || !target) return "";
-      return `<path d="${edgePath(source, target)}" fill="none" stroke="#91a1ad" stroke-width="2" marker-end="url(#arrow)"/>`;
+      return `<path d="${edgePath(source, target, e.fromHandle, e.toHandle)}" fill="none" stroke="#91a1ad" stroke-width="2" marker-end="url(#arrow)"/>`;
     })
     .join("");
   const nodes = doc.nodes

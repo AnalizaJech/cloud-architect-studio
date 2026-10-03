@@ -39,7 +39,8 @@ El GIF alterna el lienzo vacío y el diagrama de ejemplo con los iconos SVG actu
 - Biblioteca de 33 componentes de AWS, Azure, GCP, GitHub, GitLab, Kubernetes, Docker, Terraform, ArgoCD, Jenkins, Port, Backstage, n8n, Kafka, Redis, PostgreSQL, MongoDB, RabbitMQ, Grafana, Prometheus, Loki, Tempo y OpenTelemetry.
 - Iconos SVG específicos para las 33 tecnologías en la biblioteca, los nodos y las exportaciones visuales; disponibles sin conexión. Los controles usan iconos Lucide. [Fuentes y condiciones de uso](docs/ICONS.md).
 - Arrastrar y soltar con mouse; tocar para colocar con teclado o pantalla táctil.
-- Conexiones entre componentes, inspector, auto layout, cuadrícula, snap, zoom de 2 % a 3200 %, pan, undo y redo.
+- Cuatro puntos de conexión por componente: arrastrar entre puntos o seleccionar origen y destino con dos clics. El lado elegido se conserva al guardar y exportar SVG.
+- Inspector, auto layout, cuadrícula, snap, zoom de 2 % a 3200 %, pan, undo y redo.
 - Personalización por nodo: nombre, posición, ancho, alto, color y estilo de tarjeta o contorno. Los diagramas JSON antiguos siguen siendo compatibles.
 - Exportación SVG, PNG, Draw.io, Mermaid, PlantUML y JSON. PDF mediante el diálogo de impresión del navegador.
 - Guardado local automático con IndexedDB y respaldo en localStorage.
@@ -74,7 +75,7 @@ npm run preview
 ## Uso
 
 1. Arrastra un componente desde la biblioteca al lienzo, o selecciónalo para colocarlo en el centro.
-2. Activa **Conectar** y selecciona origen y destino.
+2. Pasa el cursor por un componente y arrastra desde cualquiera de sus cuatro puntos hasta otro componente. También puedes hacer clic en el punto de origen y luego en el de destino. **Conectar** mantiene visibles todos los puntos mientras diseñas.
 3. Mueve componentes, ajusta tamaño y apariencia en el inspector y usa **Auto layout** cuando sea útil.
 4. Exporta el diagrama. Usa JSON para conservar una copia editable e importarla después.
 

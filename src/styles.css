@@ -412,9 +412,13 @@ summary:focus-visible {
   max-height: 78%;
   filter: drop-shadow(0 2px 4px #0004);
 }
-.technology-port { background: #e6f8f0 !important; }
+.technology-port {
+  background: #e6f8f0 !important;
+}
 .technology-github,
-.technology-kafka { background: #f3f6f7 !important; }
+.technology-kafka {
+  background: #f3f6f7 !important;
+}
 .item-add {
   margin-left: auto;
   color: #77939b;
@@ -543,22 +547,49 @@ summary:focus-visible {
   transition: stroke 0.15s;
 }
 .node-handle {
-  width: 12px !important;
-  height: 12px !important;
-  border: 2px solid #1a242c !important;
-  background: #a0b5bb !important;
+  width: 24px !important;
+  height: 24px !important;
+  z-index: 5;
+  border: 0 !important;
+  background: transparent !important;
+  cursor: crosshair;
+  touch-action: none;
   opacity: 0;
+  transition: opacity 0.15s;
+}
+.node-handle::after {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border: 3px solid #1a242c;
+  border-radius: 50%;
+  background: #d8fb75;
+  box-shadow: 0 0 0 2px #d8fb7540;
+  pointer-events: none;
   transition:
-    opacity 0.15s,
-    background 0.15s;
+    background 0.15s,
+    box-shadow 0.15s;
 }
 .cloud-node:hover .node-handle,
 .cloud-node.is-selected .node-handle,
-.tool-connect .node-handle {
+.tool-connect .node-handle,
+.is-connecting .node-handle {
   opacity: 1;
 }
-.node-handle:hover {
-  background: var(--accent) !important;
+.node-handle:hover::after,
+.node-handle.connectingto::after,
+.node-handle.valid::after {
+  background: #ffffff;
+  box-shadow:
+    0 0 0 5px #d8fb7560,
+    0 0 18px #d8fb7580;
+}
+.tool-hand .node-handle {
+  opacity: 0 !important;
+  pointer-events: none;
+}
+.react-flow__connection-path {
+  filter: drop-shadow(0 0 5px #d8fb7590);
 }
 .cloud-node {
   display: flex;

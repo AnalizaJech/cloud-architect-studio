@@ -3,6 +3,8 @@ import {
   ReactFlow,
   Background,
   BackgroundVariant,
+  ConnectionLineType,
+  ConnectionMode,
   Handle,
   MarkerType,
   Position,
@@ -53,8 +55,10 @@ import {
   type CatalogItem,
   type DiagramDocument,
   type DiagramNode,
+  type DiagramEdge,
 } from "./model";
 import { useDiagram } from "./hooks/useDiagram";
+import { preferredPorts } from "../js/modules/geometry.js";
 
 type CloudData = { item: DiagramNode; meta: CatalogItem } & Record<
   string,
@@ -110,7 +114,22 @@ function CloudNode({ data, selected }: NodeProps<CloudFlowNode>) {
         } as React.CSSProperties
       }
     >
-      <Handle type="target" position={Position.Left} className="node-handle" />
+      <Handle
+        id="left"
+        type="source"
+        position={Position.Left}
+        className="node-handle"
+        title="Conectar por la izquierda"
+        aria-label="Conectar por la izquierda"
+      />
+      <Handle
+        id="top"
+        type="source"
+        position={Position.Top}
+        className="node-handle"
+        title="Conectar por arriba"
+        aria-label="Conectar por arriba"
+      />
       <div className={`cloud-node-icon technology-${meta.id}`}>
         <TechnologyIcon id={meta.id} size={34} />
       </div>
@@ -118,11 +137,31 @@ function CloudNode({ data, selected }: NodeProps<CloudFlowNode>) {
         <strong title={item.label}>{item.label}</strong>
         <span>{meta.group}</span>
       </div>
-      <Handle type="source" position={Position.Right} className="node-handle" />
+      <Handle
+        id="right"
+        type="source"
+        position={Position.Right}
+        className="node-handle"
+        title="Conectar por la derecha"
+        aria-label="Conectar por la derecha"
+      />
+      <Handle
+        id="bottom"
+        type="source"
+        position={Position.Bottom}
+        className="node-handle"
+        title="Conectar por abajo"
+        aria-label="Conectar por abajo"
+      />
     </div>
   );
 }
 const nodeTypes = { cloud: CloudNode };
+type Port = NonNullable<DiagramEdge["fromHandle"]>;
+const validPort = (value: string | null): Port | undefined =>
+  value === "left" || value === "right" || value === "top" || value === "bottom"
+    ? value
+    : undefined;
 
 function IconButton({
   icon: Icon,
@@ -236,6 +275,7 @@ function Studio() {
   const [selected, setSelected] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [tool, setTool] = useState<Tool>("select");
+  const [connecting, setConnecting] = useState(false);
   const [grid, setGrid] = useState(true);
   const [snap, setSnap] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -286,24 +326,38 @@ function Studio() {
       })),
     [doc.nodes, selected],
   );
+  const nodeById = useMemo(
+    () => new Map(doc.nodes.map((node) => [node.id, node])),
+    [doc.nodes],
+  );
   const edges = useMemo<Edge[]>(
     () =>
-      doc.edges.map((edge) => ({
-        id: edge.id,
-        source: edge.from,
-        target: edge.to,
-        type: "smoothstep",
-        selected: selected === edge.id,
-        style: {
-          stroke: selected === edge.id ? "#d8fb75" : "#71818e",
-          strokeWidth: selected === edge.id ? 2.5 : 1.8,
-        },
-        markerEnd: {
-          type: MarkerType.ArrowClosed,
-          color: selected === edge.id ? "#d8fb75" : "#71818e",
-        },
-      })),
-    [doc.edges, selected],
+      doc.edges.map((edge) => {
+        const source = nodeById.get(edge.from);
+        const target = nodeById.get(edge.to);
+        const preferred =
+          source && target
+            ? preferredPorts(source, target)
+            : { source: "right", target: "left" };
+        return {
+          id: edge.id,
+          source: edge.from,
+          target: edge.to,
+          sourceHandle: edge.fromHandle ?? preferred.source,
+          targetHandle: edge.toHandle ?? preferred.target,
+          type: "smoothstep",
+          selected: selected === edge.id,
+          style: {
+            stroke: selected === edge.id ? "#d8fb75" : "#71818e",
+            strokeWidth: selected === edge.id ? 2.5 : 1.8,
+          },
+          markerEnd: {
+            type: MarkerType.ArrowClosed,
+            color: selected === edge.id ? "#d8fb75" : "#71818e",
+          },
+        };
+      }),
+    [doc.edges, nodeById, selected],
   );
   const selectedNode = doc.nodes.find((node) => node.id === selected);
   const selectedEdge = doc.edges.find((edge) => edge.id === selected);
@@ -830,7 +884,7 @@ function Studio() {
               <button
                 className={`tool-button ${tool === "connect" ? "is-active" : ""}`}
                 onClick={() => setTool("connect")}
-                title="Conectar (C)"
+                title="Mostrar todos los puntos de conexión (C)"
               >
                 <Link2 size={18} />
                 <span>Conectar</span>
@@ -895,7 +949,7 @@ function Studio() {
           <div
             id="canvas"
             ref={canvasRef}
-            className={`canvas-area tool-${tool}`}
+            className={`canvas-area tool-${tool} ${connecting ? "is-connecting" : ""}`}
             onDragOver={(event) => {
               if (
                 event.dataTransfer.types.includes("application/cloud-component")
@@ -959,17 +1013,29 @@ function Studio() {
                       id: createId(),
                       from: connection.source,
                       to: connection.target,
+                      fromHandle: validPort(connection.sourceHandle),
+                      toHandle: validPort(connection.targetHandle),
                     },
                   ],
                 });
                 notify("Conexión creada");
               }}
+              onConnectStart={() => setConnecting(true)}
+              onConnectEnd={() => setConnecting(false)}
               onMoveEnd={(_, viewport) =>
                 setZoom(Math.round(viewport.zoom * 100))
               }
               panOnDrag={tool === "hand"}
               selectionOnDrag={tool === "select"}
-              nodesConnectable={tool === "connect"}
+              nodesConnectable={tool !== "hand"}
+              connectionMode={ConnectionMode.Loose}
+              connectionLineType={ConnectionLineType.SmoothStep}
+              connectionLineStyle={{
+                stroke: "#d8fb75",
+                strokeWidth: 3,
+                strokeDasharray: "7 5",
+              }}
+              connectionRadius={28}
               snapToGrid={snap}
               snapGrid={[24, 24]}
               minZoom={0.02}
@@ -1109,7 +1175,7 @@ function Studio() {
       {modal === "help" && (
         <Modal
           title="Atajos de teclado"
-          subtitle="Trabaja sin apartar las manos del teclado."
+          subtitle="Arrastra entre puntos o toca dos puntos para conectar. Usa C para mantenerlos visibles."
           onClose={() => setModal(null)}
         >
           <div className="shortcut-list">

@@ -29,6 +29,8 @@ The `DiagramDocument` version 1 schema remains the canonical source of truth. Re
 
 Coordinates and dimensions are logical canvas pixels. Import normalizes legacy records and rejects invalid node types, duplicate IDs and dangling edges. Discrete edits push bounded history snapshots; a drag gesture records one snapshot at its end.
 
+Edges may include `fromHandle` and `toHandle` with one of `left`, `right`, `top` or `bottom`. The four React Flow handles operate in loose connection mode so any visible point can start or end a connection. Older edges without handles use the nearest sides when rendered; import discards invalid handle names. SVG export uses the saved sides.
+
 ## Persistence and export
 
 Autosave writes the document to the existing IndexedDB database and key, with localStorage as a fallback. Export adapters generate SVG, PNG, PDF via print, Draw.io, Mermaid, PlantUML and JSON from the same document. The service worker is generated at build time and precaches versioned assets.

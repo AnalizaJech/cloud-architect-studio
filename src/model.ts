@@ -21,7 +21,13 @@ export type DiagramNode = {
   color: string;
   variant: "card" | "outline";
 };
-export type DiagramEdge = { id: string; from: string; to: string };
+export type DiagramEdge = {
+  id: string;
+  from: string;
+  to: string;
+  fromHandle?: "left" | "right" | "top" | "bottom";
+  toHandle?: "left" | "right" | "top" | "bottom";
+};
 export type DiagramDocument = {
   version: 1;
   title: string;
@@ -35,13 +41,7 @@ export type CatalogItem = {
   color: string;
   group: string;
 };
-export {
-  catalogById,
-  createId,
-  paths,
-  loadDocument,
-  saveDocument,
-};
+export { catalogById, createId, paths, loadDocument, saveDocument };
 /** Load the heavier, self-contained export engine only on demand. */
 export async function exportDocument(doc: DiagramDocument, format: string) {
   const service = await import("../js/services/export.js");

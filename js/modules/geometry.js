@@ -5,6 +5,7 @@ export const MIN_WIDTH = 160;
 export const MAX_WIDTH = 420;
 export const MIN_HEIGHT = 72;
 export const MAX_HEIGHT = 220;
+export const PORTS = ["left", "right", "top", "bottom"];
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 
@@ -41,8 +42,8 @@ export function labelLines(label, width) {
   ];
 }
 
-/** Route a smooth connector between the nearest sides of two variable-size nodes. */
-export function edgePath(source, target) {
+/** Choose the nearest cardinal ports for diagrams saved before explicit ports existed. */
+export function preferredPorts(source, target) {
   const ax = source.x + nodeWidth(source) / 2;
   const ay = source.y + nodeHeight(source) / 2;
   const bx = target.x + nodeWidth(target) / 2;
@@ -50,15 +51,30 @@ export function edgePath(source, target) {
   const dx = bx - ax;
   const dy = by - ay;
   if (Math.abs(dx) >= Math.abs(dy)) {
-    const sign = Math.sign(dx) || 1;
-    const x1 = ax + (sign * nodeWidth(source)) / 2;
-    const x2 = bx - (sign * nodeWidth(target)) / 2;
-    const bend = Math.max(36, Math.abs(x2 - x1) * 0.45);
-    return `M ${x1} ${ay} C ${x1 + sign * bend} ${ay}, ${x2 - sign * bend} ${by}, ${x2} ${by}`;
+    return dx >= 0
+      ? { source: "right", target: "left" }
+      : { source: "left", target: "right" };
   }
-  const sign = Math.sign(dy) || 1;
-  const y1 = ay + (sign * nodeHeight(source)) / 2;
-  const y2 = by - (sign * nodeHeight(target)) / 2;
-  const bend = Math.max(36, Math.abs(y2 - y1) * 0.45);
-  return `M ${ax} ${y1} C ${ax} ${y1 + sign * bend}, ${bx} ${y2 - sign * bend}, ${bx} ${y2}`;
+  return dy >= 0
+    ? { source: "bottom", target: "top" }
+    : { source: "top", target: "bottom" };
+}
+
+/** Return the contact point and outward direction of a cardinal port. */
+function portAnchor(node, port) {
+  const x = node.x + nodeWidth(node) / 2;
+  const y = node.y + nodeHeight(node) / 2;
+  if (port === "left") return { x: node.x, y, dx: -1, dy: 0 };
+  if (port === "right") return { x: node.x + nodeWidth(node), y, dx: 1, dy: 0 };
+  if (port === "top") return { x, y: node.y, dx: 0, dy: -1 };
+  return { x, y: node.y + nodeHeight(node), dx: 0, dy: 1 };
+}
+
+/** Route a vector connector through chosen ports, retaining legacy auto-routing. */
+export function edgePath(source, target, sourcePort, targetPort) {
+  const preferred = preferredPorts(source, target);
+  const from = portAnchor(source, PORTS.includes(sourcePort) ? sourcePort : preferred.source);
+  const to = portAnchor(target, PORTS.includes(targetPort) ? targetPort : preferred.target);
+  const bend = Math.max(36, Math.hypot(to.x - from.x, to.y - from.y) * 0.4);
+  return `M ${from.x} ${from.y} C ${from.x + from.dx * bend} ${from.y + from.dy * bend}, ${to.x + to.dx * bend} ${to.y + to.dy * bend}, ${to.x} ${to.y}`;
 }

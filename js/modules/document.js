@@ -5,10 +5,11 @@ import {
   nodeHeight,
   nodeWidth,
   nodeColor,
+  PORTS,
 } from "./geometry.js";
 
 /** @typedef {{id:string,type:string,label:string,x:number,y:number,width:number,height:number,color:string,variant:"card"|"outline"}} DiagramNode */
-/** @typedef {{id:string,from:string,to:string}} DiagramEdge */
+/** @typedef {{id:string,from:string,to:string,fromHandle?:string,toHandle?:string}} DiagramEdge */
 /** @typedef {{version:1,title:string,nodes:DiagramNode[],edges:DiagramEdge[]}} DiagramDocument */
 
 /** Create an empty versioned diagram. */
@@ -88,6 +89,8 @@ export function normalizeDocument(input) {
       id: edge.id.slice(0, 80),
       from: edge.from,
       to: edge.to,
+      ...(PORTS.includes(edge.fromHandle) ? { fromHandle: edge.fromHandle } : {}),
+      ...(PORTS.includes(edge.toHandle) ? { toHandle: edge.toHandle } : {}),
     }));
   return {
     version: 1,
