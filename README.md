@@ -20,7 +20,7 @@ Sitio publicado: [Cloud Architect Studio](https://analizajech.github.io/cloud-ar
 
 ## Capturas y GIFs
 
-Capturas reales de la aplicación en un servidor local:
+Capturas de la versión 2.0 actual, tomadas en el navegador sobre el build de producción:
 
 | Escritorio                                | Móvil (360 px)                      |
 | ----------------------------------------- | ----------------------------------- |
@@ -28,11 +28,11 @@ Capturas reales de la aplicación en un servidor local:
 
 ![Inspector con tamaño, color y estilo personalizados](docs/customization.png)
 
-![Ejemplo abierto a escala legible en 360 px](docs/mobile-example.png)
+![Biblioteca de tecnologías abierta en una pantalla de 360 px](docs/mobile-example.png)
 
 ![Del lienzo vacío a un diagrama de ejemplo](docs/demo.gif)
 
-El GIF alterna dos capturas reales del editor: el lienzo vacío y el ejemplo cargado.
+El GIF alterna el lienzo vacío y el diagrama de ejemplo con los iconos SVG actuales.
 
 ## Características
 
